@@ -91,12 +91,12 @@ Build an automated pipeline that takes raw, loosely geo-referenced imagery from 
 
 | # | Deliverable | Owner |
 |---|-------------|-------|
-| 1 | Pre-downloaded OHRC, TMC, IIRS strips for 2-3 ROIs | Data Lead |
-| 2 | `ingest.py` — GeoTIFF loader with bbox cropping | Data Lead |
-| 3 | `preprocess.py` — Downsampling + Canny edge extraction | CV Lead |
-| 4 | `match.py` — LoFTR wrapper returning keypoint arrays | ML Lead (You) |
-| 5 | `warp.py` — RANSAC + Homography + warpPerspective | CV Lead |
-| 6 | `validate.py` — RMSE, Inlier Ratio, Checkerboard | CV Lead |
-| 7 | `app.py` — Streamlit dashboard with all UI features | UI Lead |
-| 8 | `requirements.txt` | Anyone |
-| 9 | Final pitch presentation | Team |
+| 1 | Pre-downloaded OHRC, TMC, IIRS strips | Role 1 (Data Ingestion Lead) |
+| 2 | `ingest.py` — GeoTIFF loader & cropping | Role 1 (Data Ingestion Lead) |
+| 3 | `preprocess.py` — Downsampling / Scale Pyramids | Role 2 (Resolution Handling) |
+| 4 | `match.py` — LoFTR + Canny Edge Modality Bridge | Role 3 (Core ML Lead - YOU) |
+| 5 | `warp.py` — RANSAC + warpPerspective | Role 4 (Warp & Validation Lead) |
+| 6 | `validate.py` — RMSE & Inlier Ratio | Role 4 (Warp & Validation Lead) |
+| 7 | `app.py` — Streamlit dashboard | Role 5 (UI/Demo Lead) |
+| 8 | Git, Docker, Pitch Presentation | Role 6 (Integration/Presenter) |
+
