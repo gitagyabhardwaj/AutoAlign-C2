@@ -1,120 +1,56 @@
+import math
 import cv2
 import numpy as np
+from scipy.ndimage import gaussian_filter
+from skimage.transform import resize
+from rasterio.transform import Affine
 
+def downsample_to_resolution(image, profile, source_res_m, target_res_m):
+    scale_factor = target_res_m / source_res_m
+    n_pyramid_steps = int(math.floor(math.log2(scale_factor)))
+    remaining_factor = scale_factor / (2 ** n_pyramid_steps)
 
-def downsample(img_array: np.ndarray, source_res_m: float, target_res_m: float) -> np.ndarray:
-    """
-    Downsamples an image from its native resolution to a target resolution.
-    Uses Gaussian blur BEFORE resizing to prevent aliasing artifacts.
+    current = image.astype(np.float64)
+    sigma = 1.0
 
-    Args:
-        img_array:      2D numpy array (grayscale)
-        source_res_m:   Native resolution in meters/pixel (e.g., 0.25 for OHRC)
-        target_res_m:   Target resolution in meters/pixel (e.g., 5.0 for TMC)
+    for step in range(n_pyramid_steps):
+        blurred = gaussian_filter(current, sigma=sigma)
+        new_shape = (blurred.shape[0] // 2, blurred.shape[1] // 2)
+        current = resize(blurred, new_shape, anti_aliasing=False, preserve_range=True)
 
-    Returns:
-        Downsampled 2D numpy array
-    """
-    scale_factor = source_res_m / target_res_m
-    if scale_factor >= 1.0:
-        # Already at or coarser than target resolution, nothing to do
-        return img_array
-
-    # Determine Gaussian kernel size based on the downsample ratio
-    # Rule of thumb: kernel = 2 * floor(scale_factor * 3) + 1 (must be odd)
-    k = max(3, int(2 * np.floor(1 / scale_factor * 1.5) + 1))
-    if k % 2 == 0:
-        k += 1
-
-    blurred = cv2.GaussianBlur(img_array, (k, k), 0)
-
-    new_h = int(img_array.shape[0] * scale_factor)
-    new_w = int(img_array.shape[1] * scale_factor)
-
-    downsampled = cv2.resize(blurred, (new_w, new_h), interpolation=cv2.INTER_AREA)
-    return downsampled
-
-
-def normalize(img_array: np.ndarray) -> np.ndarray:
-    """
-    Z-score normalizes a single image independently.
-    Each image is normalized on its own values — NEVER matched to another image.
-    This is different from histogram matching, which destroys spectral data.
-
-    Returns:
-        Float32 array scaled to [0, 255] uint8 range
-    """
-    img = img_array.astype(np.float32)
-    mean = img.mean()
-    std = img.std()
-
-    if std < 1e-6:
-        # Flat image (e.g., all-black IIRS region), return zeros safely
-        return np.zeros_like(img_array, dtype=np.uint8)
-
-    normalized = (img - mean) / std
-    # Clip to ±3 standard deviations and rescale to [0, 255]
-    normalized = np.clip(normalized, -3, 3)
-    normalized = ((normalized + 3) / 6.0 * 255).astype(np.uint8)
-    return normalized
-
-
-def apply_modality_bridge(img_array: np.ndarray, mode: str = "auto") -> np.ndarray:
-    """
-    THE CROSS-MODAL HACK — The core of Bridge 2 (TMC -> IIRS).
-
-    Strips away sensor-specific brightness, color, and spectral values.
-    Leaves behind only structural terrain geometry (crater rims, ridges, edges).
-    This lets LoFTR match images from completely different sensors on pure geometry.
-
-    Strategy:
-        1. Normalize (eliminate brightness/contrast differences between sensors)
-        2. Canny Edge Detection (structural edges only)
-        3. Dilate edges (thicken lines so LoFTR's patch-based attention can latch on)
-
-    Args:
-        img_array:  2D numpy array (grayscale or band-averaged hyperspectral)
-        mode:       "auto"      — auto-compute Canny thresholds using Otsu's method
-                    "sensitive" — lower thresholds, captures faint/subtle edges
-                    "sharp"     — higher thresholds, captures only dominant features
-
-    Returns:
-        2D uint8 numpy array of edge map (same spatial dimensions as input)
-    """
-    if len(img_array.shape) != 2:
-        raise ValueError(
-            f"apply_modality_bridge expects a 2D array, got shape {img_array.shape}. "
-            "For IIRS multi-band: average bands first using `np.mean(iirs_cube, axis=2)`."
+    if not np.isclose(remaining_factor, 1.0, atol=1e-3):
+        final_shape = (
+            int(round(current.shape[0] / remaining_factor)),
+            int(round(current.shape[1] / remaining_factor)),
         )
+        current = resize(current, final_shape, anti_aliasing=True, preserve_range=True)
 
-    # Step 1: Normalize independently
-    img_normalized = normalize(img_array)
+    new_profile = profile.copy()
+    old_transform = profile["transform"]
+    actual_scale_y = image.shape[0] / current.shape[0]
+    actual_scale_x = image.shape[1] / current.shape[1]
 
-    # Step 2: Gentle blur before Canny to suppress noise speckle
-    # (crucial for IIRS which has much more sensor noise than OHRC)
-    img_blurred = cv2.GaussianBlur(img_normalized, (5, 5), 1.5)
+    new_transform = old_transform * Affine.scale(actual_scale_x, actual_scale_y)
+    new_profile.update({
+        "height": current.shape[0],
+        "width": current.shape[1],
+        "transform": new_transform,
+        "dtype": "float64",
+    })
 
-    # Step 3: Compute Canny thresholds
-    if mode == "auto":
-        # Otsu's method: finds the optimal threshold based on image histogram
-        otsu_thresh, _ = cv2.threshold(img_blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        low = otsu_thresh * 0.5
-        high = otsu_thresh
-    elif mode == "sensitive":
-        # Lower thresholds — catches faint structural features in IIRS
-        low, high = 20, 60
-    elif mode == "sharp":
-        # Higher thresholds — only dominant crater rims
-        low, high = 80, 200
+    return current, new_profile
+
+def normalize_independently(image, method="zscore"):
+    if method == "zscore":
+        mean, std = np.mean(image), np.std(image)
+        return (image - mean) / (std + 1e-8)
+    elif method == "minmax":
+        lo, hi = np.min(image), np.max(image)
+        return (image - lo) / (hi - lo + 1e-8)
     else:
-        raise ValueError(f"Unknown mode '{mode}'. Choose from: 'auto', 'sensitive', 'sharp'.")
+        raise ValueError(f"Unknown method: {method}")
 
-    edges = cv2.Canny(img_blurred, low, high)
-
-    # Step 4: Dilate edges to thicken them
-    # LoFTR works on 8x8 patches. A single-pixel edge vanishes in a patch.
-    # Dilation makes edges thick enough for the attention mechanism to detect.
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    edges_dilated = cv2.dilate(edges, kernel, iterations=2)
-
-    return edges_dilated
+def extract_canny_edges(image, low_thresh=50, high_thresh=150):
+    norm = cv2.normalize(image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+    img_8u = norm.astype(np.uint8)
+    return cv2.Canny(img_8u, low_thresh, high_thresh)
