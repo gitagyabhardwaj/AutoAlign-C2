@@ -59,3 +59,7 @@
 - LoFTR runs on GPU by default. If no NVIDIA GPU is available, the code must gracefully fall back to CPU.
 - Add a device check: `device = torch.device("cuda" if torch.cuda.is_available() else "cpu")`.
 - CPU inference will be slower but must still work for the demo.
+
+## Rule 13: Maintain MEMORY.md
+- Always document critical decisions, ML architecture tweaks, and current state in MEMORY.md.
+- This ensures context survives if the chat window is closed or reset.
