@@ -117,9 +117,11 @@ export default function MissionControlDashboard() {
     },
   ];
 
-  // Close-up lunar surface macro terrain image URL
-  const lunarSurfaceImg =
-    "https://images.unsplash.com/photo-1628126235206-5260b9ea6441?q=80&w=2574&auto=format&fit=crop";
+  // Lunar surface placeholder image URLs
+  const lunarBaseImg =
+    "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=2000&auto=format&fit=crop&grayscale=true";
+  const lunarOverlayImg =
+    "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=2000&auto=format&fit=crop";
 
   return (
     <main className={cn(sans.className, "relative w-screen h-screen overflow-hidden bg-[#07060c] text-white select-none")}>
@@ -480,13 +482,12 @@ export default function MissionControlDashboard() {
             {/* ------------------------------------------------------------ */}
             <div className="h-screen w-full relative shrink-0 overflow-hidden bg-black">
               {/* 1. Base Layer: Reference Base Photo (Panchromatic Optical Surface) */}
-              <div className="absolute inset-0 w-full h-full bg-neutral-950 flex items-center justify-center overflow-hidden">
-                <img
-                  src={lunarSurfaceImg}
-                  alt="Reference Base Photo"
-                  className="w-full h-full object-cover grayscale brightness-90 contrast-130 select-none pointer-events-none"
-                />
-
+              <div
+                className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat grayscale brightness-90 contrast-130 select-none pointer-events-none"
+                style={{
+                  backgroundImage: `url("${lunarBaseImg}")`,
+                }}
+              >
                 {/* HUD Badge: Reference Base Photo */}
                 <div className="absolute top-6 left-6 z-20 pointer-events-none flex items-center gap-2 bg-black/75 px-3.5 py-1.5 rounded-full border border-white/10 text-xs font-mono text-neutral-300 backdrop-blur-md shadow-xl">
                   <span className="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_#ffffff]" />
@@ -501,10 +502,11 @@ export default function MissionControlDashboard() {
                   clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)`,
                 }}
               >
-                <img
-                  src={lunarSurfaceImg}
-                  alt="Stitched 3-Frame Result"
-                  className="w-full h-full object-cover hue-rotate-180 contrast-140 saturate-200 brightness-110 select-none pointer-events-none"
+                <div
+                  className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat hue-rotate-180 contrast-140 saturate-200 brightness-110 select-none pointer-events-none"
+                  style={{
+                    backgroundImage: `url("${lunarOverlayImg}")`,
+                  }}
                 />
 
                 {/* Multi-spectral thermal gradient wash */}
@@ -583,10 +585,9 @@ export default function MissionControlDashboard() {
 
                     {/* Crater Macro Image Container */}
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
-                      <img
-                        src={lunarSurfaceImg}
-                        alt="OHRC High-Res Panchromatic Base"
-                        className="w-full h-full object-cover grayscale brightness-90 contrast-125 group-hover:scale-105 transition-transform duration-500"
+                      <div
+                        className="w-full h-full bg-cover bg-center grayscale brightness-90 contrast-125 group-hover:scale-105 transition-transform duration-500"
+                        style={{ backgroundImage: `url("${lunarBaseImg}")` }}
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-cyan-300 border border-cyan-500/30">
                         BAND: PAN (450-900nm)
@@ -627,10 +628,9 @@ export default function MissionControlDashboard() {
 
                     {/* Crater Macro Image Container with Stereo Shading */}
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
-                      <img
-                        src={lunarSurfaceImg}
-                        alt="TMC-2 Stereo Mapping"
-                        className="w-full h-full object-cover contrast-150 brightness-85 sepia-[0.25] group-hover:scale-105 transition-transform duration-500"
+                      <div
+                        className="w-full h-full bg-cover bg-center contrast-150 brightness-85 sepia-[0.25] group-hover:scale-105 transition-transform duration-500"
+                        style={{ backgroundImage: `url("${lunarOverlayImg}")` }}
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-blue-300 border border-blue-500/30">
                         STEREO TRIPLET DEM
@@ -671,10 +671,9 @@ export default function MissionControlDashboard() {
 
                     {/* Crater Macro Image Container with Hyperspectral Gradient */}
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
-                      <img
-                        src={lunarSurfaceImg}
-                        alt="IIRS Hyperspectral SWIR"
-                        className="w-full h-full object-cover invert hue-rotate-90 saturate-200 brightness-110 group-hover:scale-105 transition-transform duration-500"
+                      <div
+                        className="w-full h-full bg-cover bg-center invert hue-rotate-90 saturate-200 brightness-110 group-hover:scale-105 transition-transform duration-500"
+                        style={{ backgroundImage: `url("${lunarOverlayImg}")` }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/30 via-pink-500/20 to-amber-500/30 mix-blend-color-dodge" />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-purple-300 border border-purple-500/30">
