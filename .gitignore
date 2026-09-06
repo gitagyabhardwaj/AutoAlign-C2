@@ -1,5 +1,24 @@
 
+# Auto-Generated Documentation
 MEMORY.md
 ML_PHASES.md
+
+# Data and Images (Never commit heavy files!)
+*.jpg
+*.png
+*.tif
+*.tiff
+*.img
+*.xml
+*.vrt
 data/
 outputs/
+
+# Python Virtual Environments & Cache
+venv/
+__pycache__/
+*.pyc
+
+# Temporary Sandbox / Test Scripts
+sandbox.py
+test_phase3.py
