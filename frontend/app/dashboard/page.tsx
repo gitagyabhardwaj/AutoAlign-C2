@@ -122,7 +122,7 @@ export default function MissionControlDashboard() {
 
   // Lunar surface placeholder image for final fused payload & sensor reference frames
   const fusedPayloadImg =
-    "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=2500&auto=format&fit=crop&grayscale=true";
+    "https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?q=80&w=2500&auto=format&fit=crop&grayscale=true";
 
   const sensorCardImg =
     "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=800&auto=format&fit=crop&grayscale=true";
@@ -437,9 +437,7 @@ export default function MissionControlDashboard() {
             {/* ------------------------------------------------------------ */}
             <div
               className="h-screen w-full relative shrink-0 bg-cover bg-center overflow-hidden"
-              style={{
-                backgroundImage: `url("${fusedPayloadImg}")`,
-              }}
+              style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?q=80&w=2500&auto=format&fit=crop&grayscale=true")' }}
             >
               {/* Subtle vignette shadow gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
@@ -607,6 +605,9 @@ export default function MissionControlDashboard() {
                   </div>
                 </div>
               </div>
+
+              {/* Dedicated invisible spacer to push content above fixed bottom bar */}
+              <div className="h-40 w-full shrink-0"></div>
             </div>
 
             {/* ------------------------------------------------------------ */}
