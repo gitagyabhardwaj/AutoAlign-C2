@@ -32,6 +32,15 @@ export default function MissionControlDashboard() {
   // Simulation Stage (1 to 4)
   const [simulationStage, setSimulationStage] = useState(0);
 
+  // Interactive Fact Bubble Index & Data
+  const [factIndex, setFactIndex] = useState(0);
+  const moonFacts = [
+    "Did you know? Chandrayaan-2's OHRC camera provides the highest resolution lunar images ever taken (0.25m/px).",
+    "The lunar south pole features permanently shadowed craters that act as cold traps for water ice.",
+    "TMC-2 on board the orbiter maps the lunar surface in 3D to help us understand its geological evolution.",
+    "The IIRS sensor maps lunar mineralogy in the infrared spectrum to locate hydroxyl and water signatures."
+  ];
+
   // Dynamic import of @google/model-viewer on client mount
   useEffect(() => {
     import("@google/model-viewer").catch((err) =>
@@ -174,6 +183,15 @@ export default function MissionControlDashboard() {
                     }}
                   />
                 </div>
+              </div>
+
+              {/* WhatsApp-Style Translucent Blue Fact Bubble */}
+              <div
+                onClick={() => setFactIndex((prev) => (prev + 1) % moonFacts.length)}
+                className="absolute bottom-12 left-12 z-20 max-w-sm bg-cyan-600/30 backdrop-blur-md border border-cyan-400/50 text-white text-sm p-4 rounded-2xl rounded-bl-none shadow-[0_4px_30px_rgba(0,229,255,0.2)] cursor-pointer hover:bg-cyan-600/40 transition-all select-none"
+              >
+                <p className="leading-relaxed">{moonFacts[factIndex]}</p>
+                <span className="block mt-2 text-[10px] text-cyan-300 opacity-70">Tap for next fact...</span>
               </div>
             </section>
 
