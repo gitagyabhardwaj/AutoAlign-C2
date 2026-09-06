@@ -14,15 +14,17 @@ import {
   Compass,
   Layers,
   Sparkles,
-  Maximize2,
   Activity,
+  Image as ImageIcon,
+  ChevronDown,
+  UploadCloud,
 } from "lucide-react";
 import { StarsBackground } from "@/components/ui/stars";
 import { orbitron, sans, mono } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
 export default function MissionControlDashboard() {
-  // 2-Phase Mission Control State as specified: 'setup' | 'simulating' | 'payload'
+  // 2-Phase Mission Control State: 'setup' | 'simulating' | 'payload'
   const [missionState, setMissionState] = useState<"setup" | "simulating" | "payload">("setup");
 
   // Coordinate Inputs
@@ -114,6 +116,10 @@ export default function MissionControlDashboard() {
       subtext: "Residual: 0.38 px RMS / Multimodal boundary verified",
     },
   ];
+
+  // Close-up lunar surface macro terrain image URL
+  const lunarSurfaceImg =
+    "https://images.unsplash.com/photo-1628126235206-5260b9ea6441?q=80&w=2574&auto=format&fit=crop";
 
   return (
     <main className={cn(sans.className, "relative w-screen h-screen overflow-hidden bg-[#07060c] text-white select-none")}>
@@ -467,73 +473,241 @@ export default function MissionControlDashboard() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.6 }}
-            className="relative w-screen h-screen overflow-hidden select-none bg-black"
+            className="overflow-y-auto h-screen flex flex-col relative w-screen select-none bg-[#050505] scrollbar-thin scrollbar-thumb-cyan-500/30 scrollbar-track-transparent"
           >
-            {/* 1. Base Layer: Reference Base Photo (Bottom Layer) */}
-            <div className="absolute inset-0 w-full h-full bg-neutral-950 flex items-center justify-center overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1532693322450-2cb5c511067d?auto=format&fit=crop&w=2400&q=85"
-                alt="Reference Base Photo"
-                className="w-full h-full object-cover grayscale brightness-95 contrast-125 select-none pointer-events-none"
-              />
+            {/* ------------------------------------------------------------ */}
+            {/* Section 1: Full-Screen 100vh Interactive Surface Comparator  */}
+            {/* ------------------------------------------------------------ */}
+            <div className="h-screen w-full relative shrink-0 overflow-hidden bg-black">
+              {/* 1. Base Layer: Reference Base Photo (Panchromatic Optical Surface) */}
+              <div className="absolute inset-0 w-full h-full bg-neutral-950 flex items-center justify-center overflow-hidden">
+                <img
+                  src={lunarSurfaceImg}
+                  alt="Reference Base Photo"
+                  className="w-full h-full object-cover grayscale brightness-90 contrast-130 select-none pointer-events-none"
+                />
 
-              {/* HUD Badge: Reference Base Photo */}
-              <div className="absolute top-6 left-6 z-20 pointer-events-none flex items-center gap-2 bg-black/75 px-3.5 py-1.5 rounded-full border border-white/10 text-xs font-mono text-neutral-300 backdrop-blur-md shadow-xl">
-                <span className="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_#ffffff]" />
-                <span>REFERENCE BASE PHOTO (OHRC 0.25m PANCHROMATIC)</span>
+                {/* HUD Badge: Reference Base Photo */}
+                <div className="absolute top-6 left-6 z-20 pointer-events-none flex items-center gap-2 bg-black/75 px-3.5 py-1.5 rounded-full border border-white/10 text-xs font-mono text-neutral-300 backdrop-blur-md shadow-xl">
+                  <span className="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_#ffffff]" />
+                  <span>REFERENCE BASE PHOTO (OHRC 0.25m PANCHROMATIC)</span>
+                </div>
+              </div>
+
+              {/* 2. Top Layer: Stitched 3-Frame Result (Clipped via sliderPos %) */}
+              <div
+                className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none transition-all"
+                style={{
+                  clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)`,
+                }}
+              >
+                <img
+                  src={lunarSurfaceImg}
+                  alt="Stitched 3-Frame Result"
+                  className="w-full h-full object-cover hue-rotate-180 contrast-140 saturate-200 brightness-110 select-none pointer-events-none"
+                />
+
+                {/* Multi-spectral thermal gradient wash */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/25 via-purple-500/20 to-amber-500/25 mix-blend-color-dodge pointer-events-none" />
+
+                {/* HUD Badge: Stitched 3-Frame Result */}
+                <div className="absolute top-6 right-6 z-20 pointer-events-none flex items-center gap-2 bg-black/75 px-3.5 py-1.5 rounded-full border border-[#00E5FF]/40 text-xs font-mono text-[#00E5FF] backdrop-blur-md shadow-xl">
+                  <span className="w-2 h-2 rounded-full bg-[#00E5FF] shadow-[0_0_8px_#00E5FF] animate-pulse" />
+                  <span>STITCHED 3-FRAME RESULT (OHRC + TMC-2 + IIRS MULTIMODAL)</span>
+                </div>
+              </div>
+
+              {/* Center Vertical Divider Line Over the Full-Screen Image */}
+              <div
+                className="absolute top-0 bottom-24 w-[2px] bg-[#00E5FF] shadow-[0_0_12px_#00E5FF,0_0_24px_rgba(0,229,255,0.7)] z-30 pointer-events-none"
+                style={{ left: `${sliderPos}%` }}
+              >
+                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-cyan-950 border-2 border-[#00E5FF] shadow-[0_0_15px_#00E5FF] flex items-center justify-center text-[#00E5FF]">
+                  <Layers className="w-4 h-4" />
+                </div>
+              </div>
+
+              {/* Floating Top Center Alignment Metric */}
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none bg-cyan-950/80 px-4 py-1.5 rounded-full border border-cyan-400/50 text-xs font-mono text-cyan-300 backdrop-blur-md shadow-[0_0_20px_rgba(0,229,255,0.3)] flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-[#00E5FF]" />
+                <span>SUB-PIXEL CONVERGED (0.38 px RMSE)</span>
+              </div>
+
+              {/* Subtle Scroll Down Prompt Indicator */}
+              <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-20 pointer-events-none text-[10px] font-mono uppercase tracking-widest text-cyan-300/80 flex items-center gap-1.5 bg-black/60 px-3 py-1 rounded-full border border-cyan-500/20 backdrop-blur-sm animate-bounce">
+                <span>SCROLL DOWN FOR RAW SENSOR FRAMES</span>
+                <ChevronDown className="w-3.5 h-3.5" />
               </div>
             </div>
 
-            {/* 2. Top Layer: Stitched 3-Frame Result (Clipped via sliderPos %) */}
-            <div
-              className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none transition-all"
-              style={{
-                clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)`,
-              }}
-            >
-              <img
-                src="https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=2400&q=85"
-                alt="Stitched 3-Frame Result"
-                className="w-full h-full object-cover hue-rotate-180 contrast-125 saturate-200 brightness-110 select-none pointer-events-none"
-              />
+            {/* ------------------------------------------------------------ */}
+            {/* Section 2: Scrollable Raw Sensor Reference Frames Section     */}
+            {/* ------------------------------------------------------------ */}
+            <div className="min-h-screen bg-[#050505] pt-24 px-6 md:px-12 pb-36 relative z-40">
+              {/* Section Header */}
+              <div className="max-w-7xl mx-auto space-y-2 border-b border-white/10 pb-6">
+                <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[#00E5FF]">
+                  <Layers className="w-4 h-4 text-[#00E5FF]" />
+                  <span>PAYLOAD BREAKDOWN ARCHITECTURE</span>
+                </div>
+                <h2 className={cn(orbitron.className, "text-2xl md:text-3xl font-bold tracking-tight text-white")}>
+                  RAW SENSOR REFERENCE FRAMES
+                </h2>
+                <p className="text-xs font-mono text-neutral-400 max-w-2xl">
+                  Inspect the three independent sensor streams fused into the composite payload. Each sensor captures a distinct spatial and spectral regime over the lunar surface.
+                </p>
+              </div>
 
-              {/* Subtle false-color thermal overlay tint */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 via-purple-500/15 to-amber-500/20 mix-blend-color-dodge pointer-events-none" />
+              {/* 3-Column Grid for the 3 Sensor Reference Frames */}
+              <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+                {/* Card 1: OHRC (0.25m/px) - High-Res Panchromatic Base */}
+                <div className="border-2 border-dashed border-white/20 hover:border-cyan-400/60 rounded-2xl overflow-hidden p-5 bg-neutral-950/80 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#00E5FF] shadow-[0_0_8px_#00E5FF]" />
+                        SENSOR STREAM A
+                      </span>
+                      <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                        0.25 m/px
+                      </span>
+                    </div>
 
-              {/* HUD Badge: Stitched 3-Frame Result */}
-              <div className="absolute top-6 right-6 z-20 pointer-events-none flex items-center gap-2 bg-black/75 px-3.5 py-1.5 rounded-full border border-[#00E5FF]/40 text-xs font-mono text-[#00E5FF] backdrop-blur-md shadow-xl">
-                <span className="w-2 h-2 rounded-full bg-[#00E5FF] shadow-[0_0_8px_#00E5FF] animate-pulse" />
-                <span>STITCHED 3-FRAME RESULT (OHRC + TMC-2 + IIRS MULTIMODAL)</span>
+                    <h3 className="text-sm font-semibold text-white tracking-tight">
+                      OHRC (0.25m/px) - High-Res Panchromatic Base
+                    </h3>
+
+                    <p className="text-xs text-neutral-400 leading-relaxed">
+                      Optical High Resolution Camera providing extreme structural detail, crater rim topography, and boulder shadows.
+                    </p>
+
+                    {/* Crater Macro Image Container */}
+                    <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
+                      <img
+                        src={lunarSurfaceImg}
+                        alt="OHRC High-Res Panchromatic Base"
+                        className="w-full h-full object-cover grayscale brightness-90 contrast-125 group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-cyan-300 border border-cyan-500/30">
+                        BAND: PAN (450-900nm)
+                      </div>
+                      <div className="absolute inset-0 border-2 border-dashed border-white/10 rounded-xl pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500">
+                    <span className="flex items-center gap-1.5 text-neutral-400">
+                      <UploadCloud className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Drop final OHRC GeoTIFF here</span>
+                    </span>
+                    <span>SWATH: 12 km</span>
+                  </div>
+                </div>
+
+                {/* Card 2: TMC-2 (5.0m/px) - Stereo Mapping */}
+                <div className="border-2 border-dashed border-white/20 hover:border-blue-400/60 rounded-2xl overflow-hidden p-5 bg-neutral-950/80 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_#3b82f6]" />
+                        SENSOR STREAM B
+                      </span>
+                      <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/30">
+                        5.0 m/px
+                      </span>
+                    </div>
+
+                    <h3 className="text-sm font-semibold text-white tracking-tight">
+                      TMC-2 (5.0m/px) - Stereo Mapping
+                    </h3>
+
+                    <p className="text-xs text-neutral-400 leading-relaxed">
+                      Terrain Mapping Camera 2 generating high-resolution Digital Elevation Models (DEM) from fore, nadir, and aft views.
+                    </p>
+
+                    {/* Crater Macro Image Container with Stereo Shading */}
+                    <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
+                      <img
+                        src={lunarSurfaceImg}
+                        alt="TMC-2 Stereo Mapping"
+                        className="w-full h-full object-cover contrast-150 brightness-85 sepia-[0.25] group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-blue-300 border border-blue-500/30">
+                        STEREO TRIPLET DEM
+                      </div>
+                      <div className="absolute inset-0 border-2 border-dashed border-white/10 rounded-xl pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500">
+                    <span className="flex items-center gap-1.5 text-neutral-400">
+                      <UploadCloud className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Drop final TMC-2 DEM here</span>
+                    </span>
+                    <span>SWATH: 20 km</span>
+                  </div>
+                </div>
+
+                {/* Card 3: IIRS (80m/px) - Hyperspectral SWIR */}
+                <div className="border-2 border-dashed border-white/20 hover:border-purple-400/60 rounded-2xl overflow-hidden p-5 bg-neutral-950/80 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_8px_#a855f7]" />
+                        SENSOR STREAM C
+                      </span>
+                      <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30">
+                        80 m/px
+                      </span>
+                    </div>
+
+                    <h3 className="text-sm font-semibold text-white tracking-tight">
+                      IIRS (80m/px) - Hyperspectral SWIR
+                    </h3>
+
+                    <p className="text-xs text-neutral-400 leading-relaxed">
+                      Imaging Infrared Spectrometer characterizing water-ice signatures, hydroxyl absorption, and pyroxene mineralogy.
+                    </p>
+
+                    {/* Crater Macro Image Container with Hyperspectral Gradient */}
+                    <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
+                      <img
+                        src={lunarSurfaceImg}
+                        alt="IIRS Hyperspectral SWIR"
+                        className="w-full h-full object-cover invert hue-rotate-90 saturate-200 brightness-110 group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/30 via-pink-500/20 to-amber-500/30 mix-blend-color-dodge" />
+                      <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-purple-300 border border-purple-500/30">
+                        SWIR (0.8 - 5.0 µm)
+                      </div>
+                      <div className="absolute inset-0 border-2 border-dashed border-white/10 rounded-xl pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500">
+                    <span className="flex items-center gap-1.5 text-neutral-400">
+                      <UploadCloud className="w-3.5 h-3.5 text-purple-400" />
+                      <span>Drop final IIRS spectral cube here</span>
+                    </span>
+                    <span>256 BANDS</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Center Vertical Divider Line Over the Full-Screen Image */}
-            <div
-              className="absolute top-0 bottom-24 w-[2px] bg-[#00E5FF] shadow-[0_0_12px_#00E5FF,0_0_24px_rgba(0,229,255,0.7)] z-30 pointer-events-none"
-              style={{ left: `${sliderPos}%` }}
-            >
-              <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-black/80 border-2 border-[#00E5FF] shadow-[0_0_15px_#00E5FF] flex items-center justify-center text-[#00E5FF]">
-                <Layers className="w-4 h-4" />
-              </div>
-            </div>
-
-            {/* Floating Top Center Sensor Alignment Metric */}
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none bg-black/80 px-4 py-1.5 rounded-full border border-emerald-500/40 text-xs font-mono text-emerald-300 backdrop-blur-md shadow-xl flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>COREGISTRATION LOCKED (0.38 px RMSE)</span>
-            </div>
-
-            {/* 3. Bottom Translucent Bar: Controller, Coordinates Display, & Reset Action */}
-            <footer className="fixed bottom-0 left-0 right-0 w-full h-24 bg-black/50 backdrop-blur-md border-t border-white/20 px-6 sm:px-10 flex items-center justify-between z-40 gap-4 sm:gap-8">
+            {/* ------------------------------------------------------------ */}
+            {/* Section 3: Fixed Translucent Blue Aerospace Bottom Bar       */}
+            {/* ------------------------------------------------------------ */}
+            <footer className="fixed bottom-0 left-0 right-0 w-full h-24 bg-cyan-950/80 backdrop-blur-xl border-t border-cyan-500/50 px-6 sm:px-10 flex items-center justify-between z-50 gap-4 sm:gap-8 shadow-[0_-10px_35px_rgba(0,229,255,0.15)]">
               {/* Coordinates Display with Scanning Radar Effect */}
               <div className="flex items-center gap-3.5 min-w-0">
-                <div className="relative w-8 h-8 rounded-full bg-cyan-500/10 border border-cyan-500/40 flex items-center justify-center text-[#00E5FF] shrink-0">
+                <div className="relative w-9 h-9 rounded-full bg-cyan-500/20 border border-cyan-400/60 flex items-center justify-center text-[#00E5FF] shrink-0 shadow-[0_0_12px_rgba(0,229,255,0.4)]">
                   <Crosshair className="w-4 h-4 animate-spin [animation-duration:8s]" />
-                  <span className="absolute inset-0 rounded-full border border-[#00E5FF] animate-ping opacity-30" />
+                  <span className="absolute inset-0 rounded-full border border-[#00E5FF] animate-ping opacity-40" />
                 </div>
                 <div className="min-w-0 font-mono">
-                  <div className="text-[10px] uppercase tracking-widest text-cyan-400 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF]" />
+                  <div className="text-[10px] uppercase tracking-widest text-cyan-300 font-semibold flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] shadow-[0_0_6px_#00E5FF]" />
                     <span>LUNAR SCANNING PAYLOAD COORDS</span>
                   </div>
                   <div className="text-xs sm:text-sm font-semibold text-white truncate mt-0.5">
@@ -544,9 +718,9 @@ export default function MissionControlDashboard() {
 
               {/* Interactive Horizontal Scroller / Slider */}
               <div className="flex-1 max-w-xl hidden md:flex flex-col items-center gap-1.5">
-                <div className="flex items-center justify-between w-full text-[10px] font-mono text-neutral-400">
+                <div className="flex items-center justify-between w-full text-[10px] font-mono text-cyan-200/90">
                   <span>◀ STITCHED PAYLOAD ({sliderPos}%)</span>
-                  <span className="text-[#00E5FF] font-semibold">SWIPE BLEND</span>
+                  <span className="text-[#00E5FF] font-bold tracking-wider">SWIPE COMPARISON</span>
                   <span>REFERENCE BASE ({100 - sliderPos}%) ▶</span>
                 </div>
                 <div className="relative w-full flex items-center">
@@ -556,7 +730,7 @@ export default function MissionControlDashboard() {
                     max="100"
                     value={sliderPos}
                     onChange={(e) => setSliderPos(Number(e.target.value))}
-                    className="w-full h-2.5 bg-neutral-800 rounded-full appearance-none cursor-pointer accent-[#00E5FF] border border-white/10"
+                    className="w-full h-2.5 bg-cyan-950 rounded-full appearance-none cursor-pointer accent-[#00E5FF] border border-cyan-500/40 shadow-[0_0_10px_rgba(0,229,255,0.3)]"
                   />
                 </div>
               </div>
@@ -567,7 +741,7 @@ export default function MissionControlDashboard() {
                   onClick={handleReturnToCommandCenter}
                   className={cn(
                     orbitron.className,
-                    "px-4 sm:px-5 py-2.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white text-white hover:text-black font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg shadow-black/60 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)]"
+                    "px-4 sm:px-5 py-2.5 rounded-xl border border-cyan-400/40 bg-cyan-900/60 hover:bg-[#00E5FF] text-cyan-200 hover:text-black font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg shadow-black/60 hover:shadow-[0_0_25px_rgba(0,229,255,0.6)]"
                   )}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
