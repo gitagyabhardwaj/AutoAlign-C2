@@ -9,8 +9,6 @@ import {
   Play,
   RotateCcw,
   CheckCircle2,
-  Radio,
-  Globe2,
   Compass,
   Layers,
   Sparkles,
@@ -155,9 +153,9 @@ export default function MissionControlDashboard() {
                 </div>
               </div>
 
-              {/* Centered Moon 3D Model with Controlled Sizing (w-[80%] h-[80%] max-w-[600px] m-auto) */}
+              {/* Centered Moon 3D Model with Perfectly Clean Container */}
               <div className="absolute inset-0 z-0 flex items-center justify-center p-4">
-                <div className="w-[80%] h-[80%] max-w-[600px] max-h-[600px] m-auto flex items-center justify-center">
+                <div className="w-[85%] h-[85%] max-w-[650px] max-h-[650px] m-auto flex items-center justify-center">
                   <model-viewer
                     src="/moon.glb"
                     alt="3D Lunar Model"
@@ -177,64 +175,6 @@ export default function MissionControlDashboard() {
                   />
                 </div>
               </div>
-
-              {/* Floating Glassmorphism Fact Pop-ups Overlay */}
-              <div className="relative z-10 pointer-events-none flex flex-col justify-between h-[75%] my-auto">
-                {/* Fact Pop-up 1 (Top Left) */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="pointer-events-auto self-start max-w-xs p-3 rounded-xl border border-white/10 bg-black/60 backdrop-blur-md shadow-2xl space-y-1"
-                >
-                  <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-[#00E5FF]">
-                    <Globe2 className="w-3.5 h-3.5 text-[#00E5FF]" />
-                    <span className="font-semibold">LUNAR PHYSICAL PARAMETERS</span>
-                  </div>
-                  <p className="text-xs font-mono text-neutral-200 font-medium">
-                    LUNAR RADIUS: 1,737.4 km | GRAVITY: 1.62 m/s²
-                  </p>
-                  <div className="text-[10px] font-mono text-neutral-500">
-                    Mean Density: 3.34 g/cm³ • Surface Area: 3.793×10⁷ km²
-                  </div>
-                </motion.div>
-
-                {/* Fact Pop-up 2 (Bottom Left) */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="pointer-events-auto self-start max-w-xs p-3 rounded-xl border border-white/10 bg-black/60 backdrop-blur-md shadow-2xl space-y-1"
-                >
-                  <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-[#F59E0B]">
-                    <Radio className="w-3.5 h-3.5 text-[#F59E0B]" />
-                    <span className="font-semibold">ORBITAL METRICS</span>
-                  </div>
-                  <p className="text-xs font-mono text-neutral-200 font-medium">
-                    MISSION: Chandrayaan-2 | ALTITUDE: 100km Polar
-                  </p>
-                  <div className="text-[10px] font-mono text-neutral-500">
-                    Inclination: 90.0° • Orbital Velocity: 1.68 km/s
-                  </div>
-                </motion.div>
-              </div>
-
-              {/* Bottom Edge Fact Pop-up 3 (Sensor Specs) */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="relative z-10 pointer-events-auto max-w-md p-3 rounded-xl border border-white/10 bg-black/60 backdrop-blur-md shadow-2xl flex items-center justify-between text-xs font-mono"
-              >
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-neutral-500">PRIMARY COREGISTRATION ARRAY</div>
-                  <div className="text-neutral-200 font-medium mt-0.5">OHRC (0.25m) • TMC-2 (5.0m) • IIRS (80m)</div>
-                </div>
-                <div className="text-right pl-3 border-l border-white/10">
-                  <div className="text-[10px] uppercase tracking-wider text-cyan-400">WARP ENGINE</div>
-                  <div className="text-cyan-300 font-semibold mt-0.5">H ∈ SE(2)</div>
-                </div>
-              </motion.div>
             </section>
 
             {/* ------------------------------------------------------------ */}
