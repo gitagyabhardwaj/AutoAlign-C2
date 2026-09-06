@@ -34,9 +34,6 @@ export default function MissionControlDashboard() {
   // Simulation Stage (1 to 4)
   const [simulationStage, setSimulationStage] = useState(0);
 
-  // Full-Screen Swipe Slider Position (0 to 100%)
-  const [sliderPos, setSliderPos] = useState(50);
-
   // Dynamic import of @google/model-viewer on client mount
   useEffect(() => {
     import("@google/model-viewer").catch((err) =>
@@ -87,7 +84,6 @@ export default function MissionControlDashboard() {
   const handleReturnToCommandCenter = () => {
     setMissionState("setup");
     setSimulationStage(0);
-    setSliderPos(50);
   };
 
   const stages = [
@@ -100,14 +96,14 @@ export default function MissionControlDashboard() {
     {
       id: 2,
       title: "Scale & Feature Matching",
-      desc: "Extracting LoFTR dense correspondences across modalities",
-      subtext: "Transformer correlation matrix / Tie-points locked",
+      desc: "SuperPoint + LoFTR cross-sensor keypoints",
+      subtext: "Matches: 1,482 keypoints / Inlier Ratio: 89.4%",
     },
     {
       id: 3,
       title: "Projective Homography",
-      desc: "Solving H ∈ SE(2) perspective warp with RANSAC consensus",
-      subtext: "Perspective transform solver / Inlier ratio: 94.2%",
+      desc: "Non-linear RANSAC + Spline surface warping",
+      subtext: "Projection: Affine + Thin-Plate Spline (TPS)",
     },
     {
       id: 4,
@@ -117,11 +113,9 @@ export default function MissionControlDashboard() {
     },
   ];
 
-  // Lunar surface placeholder image URLs
-  const lunarBaseImg =
-    "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=2000&auto=format&fit=crop&grayscale=true";
-  const lunarOverlayImg =
-    "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=2000&auto=format&fit=crop";
+  // Lunar surface placeholder image for final fused payload & sensor reference frames
+  const fusedPayloadImg =
+    "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=2500&auto=format&fit=crop&grayscale=true";
 
   return (
     <main className={cn(sans.className, "relative w-screen h-screen overflow-hidden bg-[#07060c] text-white select-none")}>
@@ -475,58 +469,24 @@ export default function MissionControlDashboard() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.6 }}
-            className="overflow-y-auto h-screen flex flex-col relative w-screen select-none bg-[#050505] scrollbar-thin scrollbar-thumb-cyan-500/30 scrollbar-track-transparent"
+            className="absolute inset-0 z-50 bg-black overflow-y-auto flex flex-col select-none scrollbar-thin scrollbar-thumb-cyan-500/30 scrollbar-track-transparent"
           >
             {/* ------------------------------------------------------------ */}
-            {/* Section 1: Full-Screen 100vh Interactive Surface Comparator  */}
+            {/* Section 1: Single Full-Screen 100vh Fused Terrain View       */}
             {/* ------------------------------------------------------------ */}
-            <div className="h-screen w-full relative shrink-0 overflow-hidden bg-black">
-              {/* 1. Base Layer: Reference Base Photo (Panchromatic Optical Surface) */}
-              <div
-                className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat grayscale brightness-90 contrast-130 select-none pointer-events-none"
-                style={{
-                  backgroundImage: `url("${lunarBaseImg}")`,
-                }}
-              >
-                {/* HUD Badge: Reference Base Photo */}
-                <div className="absolute top-6 left-6 z-20 pointer-events-none flex items-center gap-2 bg-black/75 px-3.5 py-1.5 rounded-full border border-white/10 text-xs font-mono text-neutral-300 backdrop-blur-md shadow-xl">
-                  <span className="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_#ffffff]" />
-                  <span>REFERENCE BASE PHOTO (OHRC 0.25m PANCHROMATIC)</span>
-                </div>
-              </div>
+            <div
+              className="h-screen w-full relative shrink-0 bg-cover bg-center overflow-hidden"
+              style={{
+                backgroundImage: `url("${fusedPayloadImg}")`,
+              }}
+            >
+              {/* Subtle vignette shadow gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
 
-              {/* 2. Top Layer: Stitched 3-Frame Result (Clipped via sliderPos %) */}
-              <div
-                className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none transition-all"
-                style={{
-                  clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)`,
-                }}
-              >
-                <div
-                  className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat hue-rotate-180 contrast-140 saturate-200 brightness-110 select-none pointer-events-none"
-                  style={{
-                    backgroundImage: `url("${lunarOverlayImg}")`,
-                  }}
-                />
-
-                {/* Multi-spectral thermal gradient wash */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/25 via-purple-500/20 to-amber-500/25 mix-blend-color-dodge pointer-events-none" />
-
-                {/* HUD Badge: Stitched 3-Frame Result */}
-                <div className="absolute top-6 right-6 z-20 pointer-events-none flex items-center gap-2 bg-black/75 px-3.5 py-1.5 rounded-full border border-[#00E5FF]/40 text-xs font-mono text-[#00E5FF] backdrop-blur-md shadow-xl">
-                  <span className="w-2 h-2 rounded-full bg-[#00E5FF] shadow-[0_0_8px_#00E5FF] animate-pulse" />
-                  <span>STITCHED 3-FRAME RESULT (OHRC + TMC-2 + IIRS MULTIMODAL)</span>
-                </div>
-              </div>
-
-              {/* Center Vertical Divider Line Over the Full-Screen Image */}
-              <div
-                className="absolute top-0 bottom-24 w-[2px] bg-[#00E5FF] shadow-[0_0_12px_#00E5FF,0_0_24px_rgba(0,229,255,0.7)] z-30 pointer-events-none"
-                style={{ left: `${sliderPos}%` }}
-              >
-                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-cyan-950 border-2 border-[#00E5FF] shadow-[0_0_15px_#00E5FF] flex items-center justify-center text-[#00E5FF]">
-                  <Layers className="w-4 h-4" />
-                </div>
+              {/* HUD Badge: Composite Payload */}
+              <div className="absolute top-6 left-6 z-20 pointer-events-none flex items-center gap-2 bg-black/75 px-3.5 py-1.5 rounded-full border border-cyan-500/40 text-xs font-mono text-cyan-300 backdrop-blur-md shadow-xl">
+                <span className="w-2 h-2 rounded-full bg-[#00E5FF] shadow-[0_0_8px_#00E5FF] animate-pulse" />
+                <span>CHANDRAYAAN-2 COMPOSITE LUNAR PAYLOAD (FUSED OHRC + TMC-2 + IIRS)</span>
               </div>
 
               {/* Floating Top Center Alignment Metric */}
@@ -534,18 +494,12 @@ export default function MissionControlDashboard() {
                 <Sparkles className="w-3.5 h-3.5 text-[#00E5FF]" />
                 <span>SUB-PIXEL CONVERGED (0.38 px RMSE)</span>
               </div>
-
-              {/* Subtle Scroll Down Prompt Indicator */}
-              <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-20 pointer-events-none text-[10px] font-mono uppercase tracking-widest text-cyan-300/80 flex items-center gap-1.5 bg-black/60 px-3 py-1 rounded-full border border-cyan-500/20 backdrop-blur-sm animate-bounce">
-                <span>SCROLL DOWN FOR RAW SENSOR FRAMES</span>
-                <ChevronDown className="w-3.5 h-3.5" />
-              </div>
             </div>
 
             {/* ------------------------------------------------------------ */}
             {/* Section 2: Scrollable Raw Sensor Reference Frames Section     */}
             {/* ------------------------------------------------------------ */}
-            <div className="min-h-screen bg-[#050505] pt-24 px-6 md:px-12 pb-36 relative z-40">
+            <div className="min-h-screen bg-[#050505] pt-24 px-12 pb-36 relative z-40">
               {/* Section Header */}
               <div className="max-w-7xl mx-auto space-y-2 border-b border-white/10 pb-6">
                 <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[#00E5FF]">
@@ -563,7 +517,7 @@ export default function MissionControlDashboard() {
               {/* 3-Column Grid for the 3 Sensor Reference Frames */}
               <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
                 {/* Card 1: OHRC (0.25m/px) - High-Res Panchromatic Base */}
-                <div className="border-2 border-dashed border-white/20 hover:border-cyan-400/60 rounded-2xl overflow-hidden p-5 bg-neutral-950/80 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
+                <div className="border-2 border-dashed border-white/20 hover:border-cyan-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
@@ -575,7 +529,7 @@ export default function MissionControlDashboard() {
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-semibold text-white tracking-tight">
+                    <h3 className="text-base font-semibold text-white tracking-tight">
                       OHRC (0.25m/px) - High-Res Panchromatic Base
                     </h3>
 
@@ -587,7 +541,7 @@ export default function MissionControlDashboard() {
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <div
                         className="w-full h-full bg-cover bg-center grayscale brightness-90 contrast-125 group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${lunarBaseImg}")` }}
+                        style={{ backgroundImage: `url("${fusedPayloadImg}")` }}
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-cyan-300 border border-cyan-500/30">
                         BAND: PAN (450-900nm)
@@ -606,7 +560,7 @@ export default function MissionControlDashboard() {
                 </div>
 
                 {/* Card 2: TMC-2 (5.0m/px) - Stereo Mapping */}
-                <div className="border-2 border-dashed border-white/20 hover:border-blue-400/60 rounded-2xl overflow-hidden p-5 bg-neutral-950/80 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
+                <div className="border-2 border-dashed border-white/20 hover:border-blue-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
@@ -618,7 +572,7 @@ export default function MissionControlDashboard() {
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-semibold text-white tracking-tight">
+                    <h3 className="text-base font-semibold text-white tracking-tight">
                       TMC-2 (5.0m/px) - Stereo Mapping
                     </h3>
 
@@ -630,7 +584,7 @@ export default function MissionControlDashboard() {
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <div
                         className="w-full h-full bg-cover bg-center contrast-150 brightness-85 sepia-[0.25] group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${lunarOverlayImg}")` }}
+                        style={{ backgroundImage: `url("${fusedPayloadImg}")` }}
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-blue-300 border border-blue-500/30">
                         STEREO TRIPLET DEM
@@ -649,7 +603,7 @@ export default function MissionControlDashboard() {
                 </div>
 
                 {/* Card 3: IIRS (80m/px) - Hyperspectral SWIR */}
-                <div className="border-2 border-dashed border-white/20 hover:border-purple-400/60 rounded-2xl overflow-hidden p-5 bg-neutral-950/80 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
+                <div className="border-2 border-dashed border-white/20 hover:border-purple-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
@@ -661,7 +615,7 @@ export default function MissionControlDashboard() {
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-semibold text-white tracking-tight">
+                    <h3 className="text-base font-semibold text-white tracking-tight">
                       IIRS (80m/px) - Hyperspectral SWIR
                     </h3>
 
@@ -673,7 +627,7 @@ export default function MissionControlDashboard() {
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <div
                         className="w-full h-full bg-cover bg-center invert hue-rotate-90 saturate-200 brightness-110 group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${lunarOverlayImg}")` }}
+                        style={{ backgroundImage: `url("${fusedPayloadImg}")` }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/30 via-pink-500/20 to-amber-500/30 mix-blend-color-dodge" />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-purple-300 border border-purple-500/30">
@@ -697,8 +651,8 @@ export default function MissionControlDashboard() {
             {/* ------------------------------------------------------------ */}
             {/* Section 3: Fixed Translucent Blue Aerospace Bottom Bar       */}
             {/* ------------------------------------------------------------ */}
-            <footer className="fixed bottom-0 left-0 right-0 w-full h-24 bg-cyan-950/80 backdrop-blur-xl border-t border-cyan-500/50 px-6 sm:px-10 flex items-center justify-between z-50 gap-4 sm:gap-8 shadow-[0_-10px_35px_rgba(0,229,255,0.15)]">
-              {/* Coordinates Display with Scanning Radar Effect */}
+            <footer className="fixed bottom-0 w-full h-24 bg-cyan-950/80 backdrop-blur-xl border-t border-cyan-500/50 z-50 flex items-center justify-between px-12 shadow-[0_-10px_35px_rgba(0,229,255,0.15)]">
+              {/* Left Side: Target Coordinates */}
               <div className="flex items-center gap-3.5 min-w-0">
                 <div className="relative w-9 h-9 rounded-full bg-cyan-500/20 border border-cyan-400/60 flex items-center justify-center text-[#00E5FF] shrink-0 shadow-[0_0_12px_rgba(0,229,255,0.4)]">
                   <Crosshair className="w-4 h-4 animate-spin [animation-duration:8s]" />
@@ -707,7 +661,7 @@ export default function MissionControlDashboard() {
                 <div className="min-w-0 font-mono">
                   <div className="text-[10px] uppercase tracking-widest text-cyan-300 font-semibold flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] shadow-[0_0_6px_#00E5FF]" />
-                    <span>LUNAR SCANNING PAYLOAD COORDS</span>
+                    <span>TARGET COORDINATES</span>
                   </div>
                   <div className="text-xs sm:text-sm font-semibold text-white truncate mt-0.5">
                     LAT: <span className="text-[#00E5FF]">{latitude}°</span> | LON: <span className="text-[#00E5FF]">{longitude}°</span>
@@ -715,37 +669,24 @@ export default function MissionControlDashboard() {
                 </div>
               </div>
 
-              {/* Interactive Horizontal Scroller / Slider */}
-              <div className="flex-1 max-w-xl hidden md:flex flex-col items-center gap-1.5">
-                <div className="flex items-center justify-between w-full text-[10px] font-mono text-cyan-200/90">
-                  <span>◀ STITCHED PAYLOAD ({sliderPos}%)</span>
-                  <span className="text-[#00E5FF] font-bold tracking-wider">SWIPE COMPARISON</span>
-                  <span>REFERENCE BASE ({100 - sliderPos}%) ▶</span>
-                </div>
-                <div className="relative w-full flex items-center">
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={sliderPos}
-                    onChange={(e) => setSliderPos(Number(e.target.value))}
-                    className="w-full h-2.5 bg-cyan-950 rounded-full appearance-none cursor-pointer accent-[#00E5FF] border border-cyan-500/40 shadow-[0_0_10px_rgba(0,229,255,0.3)]"
-                  />
-                </div>
+              {/* Middle: Animated Text & Icon */}
+              <div className="hidden md:flex items-center gap-2 text-xs font-mono tracking-widest uppercase text-cyan-300/85 bg-cyan-950/70 px-4 py-2 rounded-full border border-cyan-500/30 backdrop-blur-sm animate-pulse shadow-[0_0_15px_rgba(0,229,255,0.15)]">
+                <ChevronDown className="w-4 h-4 text-[#00E5FF] animate-bounce" />
+                <span>SCROLL DOWN FOR RAW SENSOR FRAMES</span>
+                <ChevronDown className="w-4 h-4 text-[#00E5FF] animate-bounce" />
               </div>
 
-              {/* Action Button: Return to Command Center */}
+              {/* Right Side: Reset Button */}
               <div className="flex items-center gap-3 shrink-0">
                 <button
                   onClick={handleReturnToCommandCenter}
                   className={cn(
                     orbitron.className,
-                    "px-4 sm:px-5 py-2.5 rounded-xl border border-cyan-400/40 bg-cyan-900/60 hover:bg-[#00E5FF] text-cyan-200 hover:text-black font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg shadow-black/60 hover:shadow-[0_0_25px_rgba(0,229,255,0.6)]"
+                    "px-5 py-2.5 rounded-xl border border-cyan-400/40 bg-cyan-900/60 hover:bg-[#00E5FF] text-cyan-200 hover:text-black font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg shadow-black/60 hover:shadow-[0_0_25px_rgba(0,229,255,0.6)]"
                   )}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">RETURN TO COMMAND CENTER</span>
-                  <span className="sm:hidden">RESET</span>
+                  <span>RESET</span>
                 </button>
               </div>
             </footer>
