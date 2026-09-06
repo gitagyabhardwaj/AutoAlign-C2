@@ -29,6 +29,11 @@ export default function MissionControlDashboard() {
   const [latitude, setLatitude] = useState("-43.31");
   const [longitude, setLongitude] = useState("-11.36");
 
+  // Dynamic Payload Image for Phase 2
+  const [payloadImage, setPayloadImage] = useState(
+    "https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?q=80&w=2500&auto=format&fit=crop&grayscale=true"
+  );
+
   // Simulation Stage (1 to 4)
   const [simulationStage, setSimulationStage] = useState(0);
 
@@ -91,6 +96,12 @@ export default function MissionControlDashboard() {
   const handleReturnToCommandCenter = () => {
     setMissionState("setup");
     setSimulationStage(0);
+  };
+
+  const handlePresetClick = (latStr: string, lonStr: string, imageUrl: string) => {
+    setLatitude(latStr);
+    setLongitude(lonStr);
+    setPayloadImage(imageUrl);
   };
 
   const stages = [
@@ -277,31 +288,22 @@ export default function MissionControlDashboard() {
                       <span className="text-[10px] font-mono uppercase text-neutral-500">Target Presets:</span>
                       <button
                         type="button"
-                        onClick={() => {
-                          setLatitude("-43.31");
-                          setLongitude("-11.36");
-                        }}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer"
+                        onClick={() => handlePresetClick("-43.31", "-11.36", "https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?q=80&w=2500&auto=format&fit=crop&grayscale=true")}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-cyan-900/40 text-neutral-300 hover:text-white transition-colors cursor-pointer"
                       >
                         Tycho Crater (-43.31°, -11.36°)
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          setLatitude("-89.90");
-                          setLongitude("0.00");
-                        }}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer"
+                        onClick={() => handlePresetClick("-89.90", "0.00", "https://images.unsplash.com/photo-1628126235206-5260b9ea6441?q=80&w=2500&auto=format&fit=crop&grayscale=true")}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-cyan-900/40 text-neutral-300 hover:text-white transition-colors cursor-pointer"
                       >
                         Shackleton (-89.90°, 0.00°)
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          setLatitude("-53.00");
-                          setLongitude("-169.00");
-                        }}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer"
+                        onClick={() => handlePresetClick("-53.00", "-169.00", "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=2500&auto=format&fit=crop&grayscale=true")}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-cyan-900/40 text-neutral-300 hover:text-white transition-colors cursor-pointer"
                       >
                         Aitken Basin (-53.00°, -169.00°)
                       </button>
@@ -437,7 +439,7 @@ export default function MissionControlDashboard() {
             {/* ------------------------------------------------------------ */}
             <div
               className="h-screen w-full relative shrink-0 bg-cover bg-center overflow-hidden"
-              style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?q=80&w=2500&auto=format&fit=crop&grayscale=true")' }}
+              style={{ backgroundImage: `url("${payloadImage}")` }}
             >
               {/* Subtle vignette shadow gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
