@@ -611,22 +611,22 @@ export default function MissionControlDashboard() {
             </div>
 
             {/* ------------------------------------------------------------ */}
-            {/* Section 3: Fixed Translucent Blue Aerospace Bottom Bar       */}
+            {/* Section 3: Fixed Frosted Black Glassmorphic Aerospace Bottom Bar */}
             {/* ------------------------------------------------------------ */}
-            <footer className="fixed bottom-0 w-full h-24 bg-cyan-950/80 backdrop-blur-xl border-t border-cyan-500/50 z-50 flex items-center justify-between px-12 shadow-[0_-10px_35px_rgba(0,229,255,0.15)]">
+            <footer className="fixed bottom-0 w-full h-24 bg-black/60 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-50 flex items-center justify-between px-12">
               {/* Left Side: Target Coordinates */}
               <div className="flex items-center gap-3.5 min-w-0">
-                <div className="relative w-9 h-9 rounded-full bg-cyan-500/20 border border-cyan-400/60 flex items-center justify-center text-[#00E5FF] shrink-0 shadow-[0_0_12px_rgba(0,229,255,0.4)]">
-                  <Crosshair className="w-4 h-4 animate-spin [animation-duration:8s]" />
-                  <span className="absolute inset-0 rounded-full border border-[#00E5FF] animate-ping opacity-40" />
+                <div className="relative w-9 h-9 rounded-full bg-white/5 border border-white/15 flex items-center justify-center text-neutral-300 shrink-0 shadow-inner">
+                  <Crosshair className="w-4 h-4 animate-spin [animation-duration:8s] text-neutral-300" />
+                  <span className="absolute inset-0 rounded-full border border-white/20 animate-ping opacity-30" />
                 </div>
                 <div className="min-w-0 font-mono">
-                  <div className="text-[10px] uppercase tracking-widest text-cyan-300 font-semibold flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] shadow-[0_0_6px_#00E5FF]" />
+                  <div className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(0,229,255,0.6)]" />
                     <span>TARGET COORDINATES</span>
                   </div>
                   <div className="text-xs sm:text-sm font-semibold text-white truncate mt-0.5">
-                    LAT: <span className="text-[#00E5FF]">{latitude}°</span> | LON: <span className="text-[#00E5FF]">{longitude}°</span>
+                    LAT: <span className="text-gray-300">{latitude}°</span> | LON: <span className="text-gray-300">{longitude}°</span>
                   </div>
                 </div>
               </div>
@@ -637,10 +637,10 @@ export default function MissionControlDashboard() {
                   onClick={handleReturnToCommandCenter}
                   className={cn(
                     orbitron.className,
-                    "px-5 py-2.5 rounded-xl border border-cyan-400/40 bg-cyan-900/60 hover:bg-[#00E5FF] text-cyan-200 hover:text-black font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg shadow-black/60 hover:shadow-[0_0_25px_rgba(0,229,255,0.6)]"
+                    "px-5 py-2.5 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg shadow-black/60 hover:border-white/40"
                   )}
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
+                  <RotateCcw className="w-3.5 h-3.5 text-neutral-400" />
                   <span>RESET</span>
                 </button>
               </div>
