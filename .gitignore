@@ -14,11 +14,26 @@ ML_PHASES.md
 data/
 outputs/
 
-# Python Virtual Environments & Cache
+# Dependencies & Environments
 venv/
+.venv/
+node_modules/
+frontend/node_modules/
 __pycache__/
 *.pyc
+
+# Next.js & Frontend
+.next/
+frontend/.next/
+frontend/out/
+*.tsbuildinfo
+
+# OS
+.DS_Store
+.localized
 
 # Temporary Sandbox / Test Scripts
 sandbox.py
 test_phase3.py
+
+node_modules
