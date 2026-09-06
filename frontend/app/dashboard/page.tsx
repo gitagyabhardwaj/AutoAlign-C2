@@ -124,6 +124,9 @@ export default function MissionControlDashboard() {
   const fusedPayloadImg =
     "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=2500&auto=format&fit=crop&grayscale=true";
 
+  const sensorCardImg =
+    "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=800&auto=format&fit=crop&grayscale=true";
+
   return (
     <main className={cn(sans.className, "relative w-screen h-screen overflow-hidden bg-[#07060c] text-white select-none")}>
       {/* Absolute Cosmic Starfield Base Layer */}
@@ -457,7 +460,7 @@ export default function MissionControlDashboard() {
             {/* ------------------------------------------------------------ */}
             {/* Section 2: Scrollable Raw Sensor Reference Frames Section     */}
             {/* ------------------------------------------------------------ */}
-            <div className="min-h-screen bg-[#050505] pt-24 px-12 pb-36 relative z-40">
+            <div className="min-h-screen bg-[#050505] pt-24 px-12 pb-48 relative z-40">
               {/* Section Header */}
               <div className="max-w-7xl mx-auto space-y-2 border-b border-white/10 pb-6">
                 <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[#00E5FF]">
@@ -499,7 +502,7 @@ export default function MissionControlDashboard() {
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <div
                         className="w-full h-full bg-cover bg-center grayscale brightness-90 contrast-125 group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${fusedPayloadImg}")` }}
+                        style={{ backgroundImage: `url("${sensorCardImg}")` }}
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-cyan-300 border border-cyan-500/30">
                         BAND: PAN (450-900nm)
@@ -542,7 +545,7 @@ export default function MissionControlDashboard() {
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <div
                         className="w-full h-full bg-cover bg-center contrast-150 brightness-85 sepia-[0.25] group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${fusedPayloadImg}")` }}
+                        style={{ backgroundImage: `url("${sensorCardImg}")` }}
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-blue-300 border border-blue-500/30">
                         STEREO TRIPLET DEM
@@ -585,7 +588,7 @@ export default function MissionControlDashboard() {
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <div
                         className="w-full h-full bg-cover bg-center invert hue-rotate-90 saturate-200 brightness-110 group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${fusedPayloadImg}")` }}
+                        style={{ backgroundImage: `url("${sensorCardImg}")` }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/30 via-pink-500/20 to-amber-500/30 mix-blend-color-dodge" />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-purple-300 border border-purple-500/30">
