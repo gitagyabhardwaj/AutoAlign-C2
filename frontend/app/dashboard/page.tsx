@@ -669,13 +669,6 @@ export default function MissionControlDashboard() {
                 </div>
               </div>
 
-              {/* Middle: Animated Text & Icon */}
-              <div className="hidden md:flex items-center gap-2 text-xs font-mono tracking-widest uppercase text-cyan-300/85 bg-cyan-950/70 px-4 py-2 rounded-full border border-cyan-500/30 backdrop-blur-sm animate-pulse shadow-[0_0_15px_rgba(0,229,255,0.15)]">
-                <ChevronDown className="w-4 h-4 text-[#00E5FF] animate-bounce" />
-                <span>SCROLL DOWN FOR RAW SENSOR FRAMES</span>
-                <ChevronDown className="w-4 h-4 text-[#00E5FF] animate-bounce" />
-              </div>
-
               {/* Right Side: Reset Button */}
               <div className="flex items-center gap-3 shrink-0">
                 <button
