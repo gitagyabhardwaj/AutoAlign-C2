@@ -185,12 +185,15 @@ export default function MissionControlDashboard() {
                 </div>
               </div>
 
-              {/* WhatsApp-Style Translucent Blue Fact Bubble */}
+              {/* Sharp High-Tech Telemetry Data Box */}
               <div
                 onClick={() => setFactIndex((prev) => (prev + 1) % moonFacts.length)}
-                className="absolute bottom-12 left-12 z-20 max-w-sm bg-cyan-600/30 backdrop-blur-md border border-cyan-400/50 text-white text-sm p-4 rounded-2xl rounded-bl-none shadow-[0_4px_30px_rgba(0,229,255,0.2)] cursor-pointer hover:bg-cyan-600/40 transition-all select-none"
+                className="absolute bottom-12 left-12 z-20 max-w-sm bg-cyan-950/40 backdrop-blur-md border border-cyan-500/30 border-l-4 border-l-cyan-400 p-5 shadow-[0_0_20px_rgba(0,229,255,0.1)] cursor-pointer hover:bg-cyan-900/40 transition-colors select-none"
               >
-                <p className="leading-relaxed">{moonFacts[factIndex]}</p>
+                <div className="text-[10px] tracking-widest text-cyan-400 font-bold mb-2 uppercase flex items-center gap-2">
+                  <span>[i] LUNAR DATABASE</span>
+                </div>
+                <p className="text-white text-sm leading-relaxed">{moonFacts[factIndex]}</p>
                 <span className="block mt-2 text-[10px] text-cyan-300 opacity-70">Tap for next fact...</span>
               </div>
             </section>
