@@ -21,14 +21,15 @@
 - This strips away the modality gap and exposes shared structural geometry (crater rims, ridges).
 - Without this step, LoFTR will fail on cross-modal pairs.
 
-## Rule 5: Never Download Data Live During Demo
-- All satellite strips must be pre-downloaded and stored in `./data/`.
-- PRADAN portal can be slow, require login, or go down during presentations.
-- The Streamlit app loads from local disk only.
+## Rule 5: Local GeoTIFF Uploads (No Cloud Limits)
+- Because the stack runs exclusively on localhost, the UI must accept raw, multi-GB GeoTIFF uploads directly from the user via Drag-and-Drop.
+- The Next.js frontend sends these files via `multipart/form-data` to the local FastAPI backend.
+- We do not rely on pre-loaded demo folders or live PRADAN API fetching.
 
-## Rule 6: Never Let Users Upload Files in the Demo
-- Use a dropdown with pre-loaded ROIs.
-- Uploading multi-GB GeoTIFFs through a browser will crash Streamlit and waste pitch time.
+## Rule 6: Generate Real Scientific Output (GeoTIFF Export)
+- The pipeline MUST NOT just generate web-friendly JPGs for the dashboard.
+- The backend must use `rasterio` to write the final aligned pixel arrays into a physical, downloadable GeoTIFF file.
+- The exported GeoTIFF must strictly preserve the affine transform, CRS metadata, and use Nearest-Neighbor resampling to maintain raw radiometric integrity.
 
 ## Rule 7: Always Fail Gracefully
 - If LoFTR returns fewer than 10 keypoints → display a red error banner, do not attempt warp.

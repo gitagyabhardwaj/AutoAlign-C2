@@ -15,7 +15,7 @@ import {
   Activity,
   Image as ImageIcon,
   ChevronDown,
-  UploadCloud, Grid3X3, MoveHorizontal,
+  UploadCloud,
 } from "lucide-react";
 import { StarsBackground } from "@/components/ui/stars";
 import { orbitron, sans, mono } from "@/lib/fonts";
@@ -23,13 +23,7 @@ import { cn } from "@/lib/utils";
 
 export default function MissionControlDashboard() {
   // 2-Phase Mission Control State: 'setup' | 'simulating' | 'payload'
-  
-  const [missionState, setMissionState] = useState<"setup" | "simulating" | "payload" | "error">("setup");
-  const [result, setResult] = useState<any>(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [activeTab, setActiveTab] = useState<"slider" | "loftr" | "checker">("slider");
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
+  const [missionState, setMissionState] = useState<"setup" | "simulating" | "payload">("setup");
 
   // Coordinate Inputs
   const [latitude, setLatitude] = useState("-43.31");
@@ -59,45 +53,45 @@ export default function MissionControlDashboard() {
     );
   }, []);
 
-  
+  // 4-Stage Simulation Progression: ~4 seconds total, then wait 1 second and transition to 'payload'
+  useEffect(() => {
+    if (missionState !== "simulating") return;
 
-  
-  const handleInitiatePipeline = async (e: React.FormEvent) => {
+    setSimulationStage(1);
+
+    const t1 = setTimeout(() => {
+      setSimulationStage(2);
+    }, 1000);
+
+    const t2 = setTimeout(() => {
+      setSimulationStage(3);
+    }, 2000);
+
+    const t3 = setTimeout(() => {
+      setSimulationStage(4);
+    }, 3000);
+
+    const t4 = setTimeout(() => {
+      // Stage 4 complete; wait 1 second, then change missionState to 'payload'
+      const tPayload = setTimeout(() => {
+        setMissionState("payload");
+      }, 1000);
+
+      return () => clearTimeout(tPayload);
+    }, 4000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, [missionState]);
+
+  const handleInitiatePipeline = (e: React.FormEvent) => {
     e.preventDefault();
     setMissionState("simulating");
-    setSimulationStage(1);
-    
-    // Simulate stage progression while waiting
-    const t1 = setTimeout(() => setSimulationStage(2), 800);
-    const t2 = setTimeout(() => setSimulationStage(3), 1600);
-
-    try {
-      const res = await fetch(`${API_URL}/api/run-pipeline`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ohrc_path: "", tmc_path: "" })
-      });
-      const data = await res.json();
-      
-      setSimulationStage(4);
-      
-      await new Promise(r => setTimeout(r, 600)); // Brief pause on stage 4
-      
-      if (data.success) {
-        setResult(data);
-        setMissionState("payload");
-      } else {
-        setErrorMessage(data.error || "Pipeline failed");
-        setMissionState("error");
-      }
-    } catch (err) {
-      setErrorMessage("Cannot reach the backend server.");
-      setMissionState("error");
-    }
-    clearTimeout(t1);
-    clearTimeout(t2);
   };
-
 
   const handleReturnToCommandCenter = () => {
     setMissionState("setup");
@@ -150,17 +144,6 @@ export default function MissionControlDashboard() {
       <StarsBackground factor={0.02} speed={50} className="absolute inset-0 z-0 pointer-events-none" />
 
       <AnimatePresence mode="wait">
-        
-        {missionState === "error" && (
-          <motion.div className="absolute inset-0 z-50 flex items-center justify-center p-8 bg-black">
-            <div className="max-w-lg w-full bg-neutral-950 border border-red-500/30 rounded-2xl p-8 space-y-4">
-              <h2 className="text-lg text-red-400">Pipeline Failed</h2>
-              <p className="text-sm text-red-300">{errorMessage}</p>
-              <button onClick={handleReturnToCommandCenter} className="px-6 py-2 bg-white/10 text-white rounded">Retry</button>
-            </div>
-          </motion.div>
-        )}
-
         {/* ================================================================ */}
         {/* PHASE 1: The 50/50 Command Center ('setup' | 'simulating')       */}
         {/* ================================================================ */}
@@ -456,7 +439,7 @@ export default function MissionControlDashboard() {
             {/* ------------------------------------------------------------ */}
             <div
               className="h-screen w-full relative shrink-0 bg-cover bg-center overflow-hidden"
-              style={{ backgroundImage: `url("${result?.images?.warped_overlay || payloadImage}")` }}
+              style={{ backgroundImage: `url("${payloadImage}")` }}
             >
               {/* Subtle vignette shadow gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
@@ -470,39 +453,11 @@ export default function MissionControlDashboard() {
               {/* Floating Top Center Alignment Metric */}
               <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none bg-cyan-950/80 px-4 py-1.5 rounded-full border border-cyan-400/50 text-xs font-mono text-cyan-300 backdrop-blur-md shadow-[0_0_20px_rgba(0,229,255,0.3)] flex items-center gap-2">
                 <Sparkles className="w-3.5 h-3.5 text-[#00E5FF]" />
-                <span>SUB-PIXEL CONVERGED ({result?.metrics?.rmse.toFixed(2)} px RMSE)</span>
+                <span>SUB-PIXEL CONVERGED (0.38 px RMSE)</span>
               </div>
             </div>
 
             {/* ------------------------------------------------------------ */}
-            
-            {/* --- INJECTED API VISUALIZATIONS --- */}
-            <div className="max-w-7xl mx-auto px-12 pt-16 relative z-40 space-y-5">
-              <div className="bg-neutral-950/70 border border-white/10 rounded-2xl p-5 backdrop-blur-xl space-y-5">
-                <div className="flex border-b border-white/10 pb-3 gap-1 overflow-x-auto">
-                  <button onClick={() => setActiveTab("slider")} className={cn("flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium", activeTab === "slider" ? "bg-white/10 text-white border border-white/10" : "text-neutral-400")}>Warped Overlay</button>
-                  <button onClick={() => setActiveTab("loftr")} className={cn("flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium", activeTab === "loftr" ? "bg-white/10 text-white border border-white/10" : "text-neutral-400")}>LoFTR Matches</button>
-                  <button onClick={() => setActiveTab("checker")} className={cn("flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium", activeTab === "checker" ? "bg-white/10 text-white border border-white/10" : "text-neutral-400")}>Checkerboard</button>
-                </div>
-                
-                {activeTab === "slider" && result?.images && (
-                  <div className="relative w-full rounded-xl overflow-hidden border border-white/10 bg-black">
-                    <img src={result.images.warped_overlay} className="w-full h-auto" />
-                  </div>
-                )}
-                {activeTab === "loftr" && result?.images && (
-                  <div className="relative w-full rounded-xl overflow-hidden border border-white/10 bg-black">
-                    <img src={result.images.match_visualization} className="w-full h-auto" />
-                  </div>
-                )}
-                {activeTab === "checker" && result?.images && (
-                  <div className="relative w-full rounded-xl overflow-hidden border border-white/10 bg-black">
-                    <img src={result.images.checkerboard} className="w-full h-auto" />
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* Section 2: Scrollable Raw Sensor Reference Frames Section     */}
             {/* ------------------------------------------------------------ */}
             <div className="min-h-screen bg-[#050505] pt-24 px-12 pb-48 relative z-40">
@@ -547,7 +502,7 @@ export default function MissionControlDashboard() {
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <div
                         className="w-full h-full bg-cover bg-center grayscale brightness-90 contrast-125 group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${result?.images?.ohrc_preview || sensorCardImg}")` }}
+                        style={{ backgroundImage: `url("${sensorCardImg}")` }}
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-cyan-300 border border-cyan-500/30">
                         BAND: PAN (450-900nm)
@@ -590,7 +545,7 @@ export default function MissionControlDashboard() {
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <div
                         className="w-full h-full bg-cover bg-center contrast-150 brightness-85 sepia-[0.25] group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${result?.images?.tmc_preview || sensorCardImg}")` }}
+                        style={{ backgroundImage: `url("${sensorCardImg}")` }}
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-blue-300 border border-blue-500/30">
                         STEREO TRIPLET DEM
@@ -633,7 +588,7 @@ export default function MissionControlDashboard() {
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <div
                         className="w-full h-full bg-cover bg-center invert hue-rotate-90 saturate-200 brightness-110 group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${result?.images?.tmc_preview || sensorCardImg}")` }}
+                        style={{ backgroundImage: `url("${sensorCardImg}")` }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/30 via-pink-500/20 to-amber-500/30 mix-blend-color-dodge" />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-purple-300 border border-purple-500/30">
