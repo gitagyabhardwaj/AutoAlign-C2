@@ -37,3 +37,15 @@ sandbox.py
 test_phase3.py
 
 node_modules
+
+# Planetary pipeline data & large rasters
+test_data/
+test_output/
+browse/
+*.img
+*.qub
+*.zip
+output_analysis_ready/*.tif
+output_analysis_ready/*.img
+!output_analysis_ready/*.png
+!output_analysis_ready/*.vrt
