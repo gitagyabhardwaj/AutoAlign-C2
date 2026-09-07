@@ -504,25 +504,6 @@ export default function MissionControlDashboard() {
                 <span className="w-2 h-2 rounded-full bg-[#00E5FF] shadow-[0_0_8px_#00E5FF] animate-pulse" />
                 <span>CHANDRAYAAN-2 COMPOSITE LUNAR PAYLOAD</span>
               </div>
-
-              {/* Top Right Floating Telemetry HUD: RMSE, Inlier Match Count, Inlier Ratio */}
-              <div className="absolute top-6 right-6 z-20 pointer-events-none flex items-center gap-4 bg-black/85 backdrop-blur-xl border border-cyan-500/50 px-4 py-2 rounded-xl shadow-[0_0_30px_rgba(0,229,255,0.2)] font-mono">
-                <div className="flex items-center gap-2 pr-4 border-r border-white/10">
-                  <Sparkles className="w-3.5 h-3.5 text-[#00E5FF]" />
-                  <span className="text-[10px] text-gray-400 uppercase tracking-wider">RMSE:</span>
-                  <span className="text-xs font-bold text-cyan-400">0.38 px</span>
-                </div>
-                <div className="flex items-center gap-2 pr-4 border-r border-white/10">
-                  <Activity className="w-3.5 h-3.5 text-[#00E5FF]" />
-                  <span className="text-[10px] text-gray-400 uppercase tracking-wider">Inliers:</span>
-                  <span className="text-xs font-bold text-cyan-400">1,482</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#00E5FF]" />
-                  <span className="text-[10px] text-gray-400 uppercase tracking-wider">Ratio:</span>
-                  <span className="text-xs font-bold text-cyan-400">89.4%</span>
-                </div>
-              </div>
             </div>
 
             {/* ------------------------------------------------------------ */}
