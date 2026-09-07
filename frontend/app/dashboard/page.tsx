@@ -38,9 +38,9 @@ export default function MissionControlDashboard() {
   // Sensor reference frames image states
   const defaultSensorImg =
     "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=800&auto=format&fit=crop&grayscale=true";
-  const [ohrcImage, setOhrcImage] = useState(defaultSensorImg);
-  const [tmcImage, setTmcImage] = useState(defaultSensorImg);
-  const [iirsImage, setIirsImage] = useState(defaultSensorImg);
+  const [ohrcImage, setOhrcImage] = useState<string | null>(null);
+  const [tmcImage, setTmcImage] = useState<string | null>(null);
+  const [iirsImage, setIirsImage] = useState<string | null>(null);
 
   // Simulation Stage (1 to 4)
   const [simulationStage, setSimulationStage] = useState(0);
@@ -114,7 +114,7 @@ export default function MissionControlDashboard() {
 
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
-    setSensorImage: React.Dispatch<React.SetStateAction<string>>
+    setSensorImage: React.Dispatch<React.SetStateAction<string | null>>
   ) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -260,25 +260,109 @@ export default function MissionControlDashboard() {
                 <form onSubmit={handleInitiatePipeline} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* OHRC Upload */}
-                    <div className="bg-black/60 border border-dashed border-cyan-500/40 p-6 rounded-lg flex flex-col items-center justify-center space-y-2 hover:bg-cyan-950/30 hover:border-cyan-400 transition-all cursor-pointer relative">
-                      <span className="text-cyan-400 font-bold text-xs tracking-widest">OHRC</span>
-                      <span className="text-[10px] text-gray-500">Select .zip</span>
-                      <input type="file" accept=".zip" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                    </div>
+                    {ohrcImage ? (
+                      <div className="bg-black/60 border border-cyan-500/60 p-3 rounded-lg flex flex-col relative w-full h-full shadow-[0_0_15px_rgba(0,229,255,0.1)]">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-cyan-400 font-bold text-xs tracking-widest">OHRC</span>
+                          <span className="text-[9px] px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 rounded border border-cyan-500/30">LOCKED</span>
+                        </div>
+                        
+                        <img src={ohrcImage} alt="OHRC Preview" className="w-full h-24 object-cover rounded mb-3 border border-white/10 grayscale contrast-125" />
+                        
+                        <div className="bg-black/80 p-2 rounded border border-white/5 text-left space-y-1.5 w-full">
+                          <div className="text-[10px] text-gray-400 flex justify-between"><span>RMSE:</span> <span className="text-cyan-400 font-mono">0.38 px</span></div>
+                          <div className="text-[10px] text-gray-400 flex justify-between"><span>Inliers:</span> <span className="text-cyan-400 font-mono">1,482</span></div>
+                          <div className="text-[10px] text-gray-400 flex justify-between"><span>Ratio:</span> <span className="text-cyan-400 font-mono">89.4%</span></div>
+                        </div>
+                        <input
+                          type="file"
+                          accept=".zip, image/*, .tif, .tiff"
+                          onChange={(e) => handleFileUpload(e, setOhrcImage)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    ) : (
+                      <div className="bg-black/60 border border-dashed border-cyan-500/40 p-6 rounded-lg flex flex-col items-center justify-center space-y-2 hover:bg-cyan-950/30 hover:border-cyan-400 transition-all cursor-pointer relative">
+                        <span className="text-cyan-400 font-bold text-xs tracking-widest">OHRC</span>
+                        <span className="text-[10px] text-gray-500">Select .zip</span>
+                        <input
+                          type="file"
+                          accept=".zip, image/*, .tif, .tiff"
+                          onChange={(e) => handleFileUpload(e, setOhrcImage)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    )}
                     
                     {/* TMC-2 Upload */}
-                    <div className="bg-black/60 border border-dashed border-cyan-500/40 p-6 rounded-lg flex flex-col items-center justify-center space-y-2 hover:bg-cyan-950/30 hover:border-cyan-400 transition-all cursor-pointer relative">
-                      <span className="text-cyan-400 font-bold text-xs tracking-widest">TMC-2</span>
-                      <span className="text-[10px] text-gray-500">Select .zip</span>
-                      <input type="file" accept=".zip" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                    </div>
+                    {tmcImage ? (
+                      <div className="bg-black/60 border border-cyan-500/60 p-3 rounded-lg flex flex-col relative w-full h-full shadow-[0_0_15px_rgba(0,229,255,0.1)]">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-cyan-400 font-bold text-xs tracking-widest">TMC-2</span>
+                          <span className="text-[9px] px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 rounded border border-cyan-500/30">LOCKED</span>
+                        </div>
+                        
+                        <img src={tmcImage} alt="TMC-2 Preview" className="w-full h-24 object-cover rounded mb-3 border border-white/10 contrast-150 brightness-85 sepia-[0.25]" />
+                        
+                        <div className="bg-black/80 p-2 rounded border border-white/5 text-left space-y-1.5 w-full">
+                          <div className="text-[10px] text-gray-400 flex justify-between"><span>RMSE:</span> <span className="text-cyan-400 font-mono">0.42 px</span></div>
+                          <div className="text-[10px] text-gray-400 flex justify-between"><span>Inliers:</span> <span className="text-cyan-400 font-mono">1,120</span></div>
+                          <div className="text-[10px] text-gray-400 flex justify-between"><span>Ratio:</span> <span className="text-cyan-400 font-mono">84.2%</span></div>
+                        </div>
+                        <input
+                          type="file"
+                          accept=".zip, image/*, .tif, .tiff"
+                          onChange={(e) => handleFileUpload(e, setTmcImage)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    ) : (
+                      <div className="bg-black/60 border border-dashed border-cyan-500/40 p-6 rounded-lg flex flex-col items-center justify-center space-y-2 hover:bg-cyan-950/30 hover:border-cyan-400 transition-all cursor-pointer relative">
+                        <span className="text-cyan-400 font-bold text-xs tracking-widest">TMC-2</span>
+                        <span className="text-[10px] text-gray-500">Select .zip</span>
+                        <input
+                          type="file"
+                          accept=".zip, image/*, .tif, .tiff"
+                          onChange={(e) => handleFileUpload(e, setTmcImage)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    )}
 
                     {/* IIRS Upload */}
-                    <div className="bg-black/60 border border-dashed border-cyan-500/40 p-6 rounded-lg flex flex-col items-center justify-center space-y-2 hover:bg-cyan-950/30 hover:border-cyan-400 transition-all cursor-pointer relative">
-                      <span className="text-cyan-400 font-bold text-xs tracking-widest">IIRS</span>
-                      <span className="text-[10px] text-gray-500">Select .zip</span>
-                      <input type="file" accept=".zip" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                    </div>
+                    {iirsImage ? (
+                      <div className="bg-black/60 border border-cyan-500/60 p-3 rounded-lg flex flex-col relative w-full h-full shadow-[0_0_15px_rgba(0,229,255,0.1)]">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-cyan-400 font-bold text-xs tracking-widest">IIRS</span>
+                          <span className="text-[9px] px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 rounded border border-cyan-500/30">LOCKED</span>
+                        </div>
+                        
+                        <img src={iirsImage} alt="IIRS Preview" className="w-full h-24 object-cover rounded mb-3 border border-white/10 invert hue-rotate-90 saturate-200 brightness-110" />
+                        
+                        <div className="bg-black/80 p-2 rounded border border-white/5 text-left space-y-1.5 w-full">
+                          <div className="text-[10px] text-gray-400 flex justify-between"><span>RMSE:</span> <span className="text-cyan-400 font-mono">0.51 px</span></div>
+                          <div className="text-[10px] text-gray-400 flex justify-between"><span>Inliers:</span> <span className="text-cyan-400 font-mono">984</span></div>
+                          <div className="text-[10px] text-gray-400 flex justify-between"><span>Ratio:</span> <span className="text-cyan-400 font-mono">81.3%</span></div>
+                        </div>
+                        <input
+                          type="file"
+                          accept=".zip, image/*, .tif, .tiff"
+                          onChange={(e) => handleFileUpload(e, setIirsImage)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    ) : (
+                      <div className="bg-black/60 border border-dashed border-cyan-500/40 p-6 rounded-lg flex flex-col items-center justify-center space-y-2 hover:bg-cyan-950/30 hover:border-cyan-400 transition-all cursor-pointer relative">
+                        <span className="text-cyan-400 font-bold text-xs tracking-widest">IIRS</span>
+                        <span className="text-[10px] text-gray-500">Select .zip</span>
+                        <input
+                          type="file"
+                          accept=".zip, image/*, .tif, .tiff"
+                          onChange={(e) => handleFileUpload(e, setIirsImage)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Large Glowing Cyan INITIATE PIPELINE Button (Hidden when simulating) */}
@@ -472,7 +556,7 @@ export default function MissionControlDashboard() {
                     {/* Crater Macro Image Container */}
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <img
-                        src={ohrcImage}
+                        src={ohrcImage || defaultSensorImg}
                         alt="OHRC preview"
                         className="w-full h-full object-cover grayscale brightness-90 contrast-125 group-hover:scale-105 transition-transform duration-500"
                       />
@@ -522,7 +606,7 @@ export default function MissionControlDashboard() {
                     {/* Crater Macro Image Container with Stereo Shading */}
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <img
-                        src={tmcImage}
+                        src={tmcImage || defaultSensorImg}
                         alt="TMC-2 preview"
                         className="w-full h-full object-cover contrast-150 brightness-85 sepia-[0.25] group-hover:scale-105 transition-transform duration-500"
                       />
@@ -572,7 +656,7 @@ export default function MissionControlDashboard() {
                     {/* Crater Macro Image Container with Hyperspectral Gradient */}
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <img
-                        src={iirsImage}
+                        src={iirsImage || defaultSensorImg}
                         alt="IIRS preview"
                         className="w-full h-full object-cover invert hue-rotate-90 saturate-200 brightness-110 group-hover:scale-105 transition-transform duration-500"
                       />
