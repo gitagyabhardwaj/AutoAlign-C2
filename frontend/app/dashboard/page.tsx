@@ -773,25 +773,8 @@ export default function MissionControlDashboard() {
             {/* Section 3: Fixed Frosted Black Glassmorphic Aerospace Bottom Bar */}
             {/* ------------------------------------------------------------ */}
             <footer className="fixed bottom-0 w-full h-24 bg-black/60 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-50 flex items-center justify-between px-12">
-              {/* Left Side: Target Coordinates */}
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="relative w-9 h-9 rounded-full bg-white/5 border border-white/15 flex items-center justify-center text-neutral-300 shrink-0 shadow-inner">
-                  <Crosshair className="w-4 h-4 animate-spin [animation-duration:8s] text-neutral-300" />
-                  <span className="absolute inset-0 rounded-full border border-white/20 animate-ping opacity-30" />
-                </div>
-                <div className="min-w-0 font-mono">
-                  <div className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(0,229,255,0.6)]" />
-                    <span>TARGET COORDINATES</span>
-                  </div>
-                  <div className="text-xs sm:text-sm font-semibold text-white truncate mt-0.5">
-                    LAT: <span className="text-gray-300">{latitude}°</span> | LON: <span className="text-gray-300">{longitude}°</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Center: Global Telemetry Metrics */}
-              <div className="hidden lg:flex items-center gap-4 pl-6 border-l border-white/10 font-mono">
+              {/* Left Side: Global Telemetry Metrics */}
+              <div className="flex items-center gap-4 font-mono">
                 <div className="bg-black/50 border border-cyan-500/20 px-3.5 py-1.5 rounded-lg flex items-center gap-2">
                   <span className="text-[9px] uppercase tracking-wider text-gray-400">RMSE:</span>
                   <span className="text-xs font-bold text-cyan-400">0.38 px</span>
