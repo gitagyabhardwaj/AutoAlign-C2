@@ -220,10 +220,10 @@ export default function MissionControlDashboard() {
                   <span>CHANDRAYAAN-2 FLIGHT TERMINAL</span>
                 </div>
                 <h1 className={cn(orbitron.className, "text-xl md:text-2xl font-bold tracking-tight text-white")}>
-                  Target Coordinates Command
+                  Sensor Data Ingestion
                 </h1>
                 <p className="text-xs text-neutral-400">
-                  Specify lunar target sub-points to initiate sub-pixel projective warp and multi-sensor fusion.
+                  Upload raw .zip photo archives for OHRC, TMC-2, and IIRS sensors to initiate multi-sensor fusion.
                 </p>
               </div>
 
@@ -232,83 +232,34 @@ export default function MissionControlDashboard() {
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-mono uppercase tracking-wider text-white font-semibold flex items-center gap-2">
                     <Crosshair className="w-4 h-4 text-[#00E5FF]" />
-                    TARGET COORDINATES
+                    SENSOR ARCHIVE UPLOADS
                   </span>
                   <span className="text-[10px] font-mono text-neutral-500">PDS4-CRS / ELLIPSOID</span>
                 </div>
 
                 <form onSubmit={handleInitiatePipeline} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Latitude Input */}
-                    <div className="space-y-1.5">
-                      <label className="block text-[11px] font-mono uppercase tracking-wider text-neutral-400">
-                        LATITUDE (°N/S)
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={latitude}
-                          onChange={(e) => setLatitude(e.target.value)}
-                          disabled={missionState === "simulating"}
-                          placeholder="-43.31"
-                          className="w-full bg-black/60 border border-white/10 focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] rounded-xl px-4 py-3 text-xs font-mono text-neutral-100 placeholder-neutral-600 focus:outline-none transition-all disabled:opacity-50"
-                          required
-                        />
-                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-neutral-500">
-                          DEG
-                        </span>
-                      </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* OHRC Upload */}
+                    <div className="bg-black/60 border border-dashed border-cyan-500/40 p-6 rounded-lg flex flex-col items-center justify-center space-y-2 hover:bg-cyan-950/30 hover:border-cyan-400 transition-all cursor-pointer relative">
+                      <span className="text-cyan-400 font-bold text-xs tracking-widest">OHRC</span>
+                      <span className="text-[10px] text-gray-500">Select .zip</span>
+                      <input type="file" accept=".zip" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                    </div>
+                    
+                    {/* TMC-2 Upload */}
+                    <div className="bg-black/60 border border-dashed border-cyan-500/40 p-6 rounded-lg flex flex-col items-center justify-center space-y-2 hover:bg-cyan-950/30 hover:border-cyan-400 transition-all cursor-pointer relative">
+                      <span className="text-cyan-400 font-bold text-xs tracking-widest">TMC-2</span>
+                      <span className="text-[10px] text-gray-500">Select .zip</span>
+                      <input type="file" accept=".zip" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                     </div>
 
-                    {/* Longitude Input */}
-                    <div className="space-y-1.5">
-                      <label className="block text-[11px] font-mono uppercase tracking-wider text-neutral-400">
-                        LONGITUDE (°E/W)
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={longitude}
-                          onChange={(e) => setLongitude(e.target.value)}
-                          disabled={missionState === "simulating"}
-                          placeholder="-11.36"
-                          className="w-full bg-black/60 border border-white/10 focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] rounded-xl px-4 py-3 text-xs font-mono text-neutral-100 placeholder-neutral-600 focus:outline-none transition-all disabled:opacity-50"
-                          required
-                        />
-                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-neutral-500">
-                          DEG
-                        </span>
-                      </div>
+                    {/* IIRS Upload */}
+                    <div className="bg-black/60 border border-dashed border-cyan-500/40 p-6 rounded-lg flex flex-col items-center justify-center space-y-2 hover:bg-cyan-950/30 hover:border-cyan-400 transition-all cursor-pointer relative">
+                      <span className="text-cyan-400 font-bold text-xs tracking-widest">IIRS</span>
+                      <span className="text-[10px] text-gray-500">Select .zip</span>
+                      <input type="file" accept=".zip" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                     </div>
                   </div>
-
-                  {/* Preset Targets */}
-                  {missionState === "setup" && (
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                      <span className="text-[10px] font-mono uppercase text-neutral-500">Target Presets:</span>
-                      <button
-                        type="button"
-                        onClick={() => handlePresetClick("-43.31", "-11.36", "https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?q=80&w=2500&auto=format&fit=crop&grayscale=true")}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-cyan-900/40 text-neutral-300 hover:text-white transition-colors cursor-pointer"
-                      >
-                        Tycho Crater (-43.31°, -11.36°)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handlePresetClick("-89.90", "0.00", "https://images.unsplash.com/photo-1628126235206-5260b9ea6441?q=80&w=2500&auto=format&fit=crop&grayscale=true")}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-cyan-900/40 text-neutral-300 hover:text-white transition-colors cursor-pointer"
-                      >
-                        Shackleton (-89.90°, 0.00°)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handlePresetClick("-53.00", "-169.00", "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=2500&auto=format&fit=crop&grayscale=true")}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-cyan-900/40 text-neutral-300 hover:text-white transition-colors cursor-pointer"
-                      >
-                        Aitken Basin (-53.00°, -169.00°)
-                      </button>
-                    </div>
-                  )}
 
                   {/* Large Glowing Cyan INITIATE PIPELINE Button (Hidden when simulating) */}
                   {missionState === "setup" && (
