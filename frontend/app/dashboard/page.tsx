@@ -35,6 +35,13 @@ export default function MissionControlDashboard() {
     "https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?q=80&w=2500&auto=format&fit=crop&grayscale=true"
   );
 
+  // Sensor reference frames image states
+  const defaultSensorImg =
+    "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=800&auto=format&fit=crop&grayscale=true";
+  const [ohrcImage, setOhrcImage] = useState(defaultSensorImg);
+  const [tmcImage, setTmcImage] = useState(defaultSensorImg);
+  const [iirsImage, setIirsImage] = useState(defaultSensorImg);
+
   // Simulation Stage (1 to 4)
   const [simulationStage, setSimulationStage] = useState(0);
 
@@ -103,6 +110,18 @@ export default function MissionControlDashboard() {
     setLatitude(latStr);
     setLongitude(lonStr);
     setPayloadImage(imageUrl);
+  };
+
+  const handleFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setSensorImage: React.Dispatch<React.SetStateAction<string>>
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Creates a temporary local URL to preview the uploaded file
+      const imageUrl = URL.createObjectURL(file);
+      setSensorImage(imageUrl);
+    }
   };
 
   const stages = [
@@ -430,7 +449,7 @@ export default function MissionControlDashboard() {
               {/* 3-Column Grid for the 3 Sensor Reference Frames */}
               <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
                 {/* Card 1: OHRC (0.25m/px) - High-Res Panchromatic Base */}
-                <div className="border-2 border-dashed border-white/20 hover:border-cyan-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
+                <div className="border-2 border-dashed border-white/20 hover:border-cyan-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between relative">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
@@ -452,9 +471,10 @@ export default function MissionControlDashboard() {
 
                     {/* Crater Macro Image Container */}
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
-                      <div
-                        className="w-full h-full bg-cover bg-center grayscale brightness-90 contrast-125 group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${sensorCardImg}")` }}
+                      <img
+                        src={ohrcImage}
+                        alt="OHRC preview"
+                        className="w-full h-full object-cover grayscale brightness-90 contrast-125 group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-cyan-300 border border-cyan-500/30">
                         BAND: PAN (450-900nm)
@@ -463,17 +483,23 @@ export default function MissionControlDashboard() {
                     </div>
                   </div>
 
-                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500">
+                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500 relative cursor-pointer hover:text-white transition-colors">
                     <span className="flex items-center gap-1.5 text-neutral-400">
                       <UploadCloud className="w-3.5 h-3.5 text-cyan-400" />
                       <span>Drop final OHRC GeoTIFF here</span>
                     </span>
                     <span>SWATH: 12 km</span>
+                    <input
+                      type="file"
+                      accept=".zip, image/*, .tif, .tiff"
+                      onChange={(e) => handleFileUpload(e, setOhrcImage)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
                   </div>
                 </div>
 
                 {/* Card 2: TMC-2 (5.0m/px) - Stereo Mapping */}
-                <div className="border-2 border-dashed border-white/20 hover:border-blue-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
+                <div className="border-2 border-dashed border-white/20 hover:border-blue-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between relative">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
@@ -495,9 +521,10 @@ export default function MissionControlDashboard() {
 
                     {/* Crater Macro Image Container with Stereo Shading */}
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
-                      <div
-                        className="w-full h-full bg-cover bg-center contrast-150 brightness-85 sepia-[0.25] group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${sensorCardImg}")` }}
+                      <img
+                        src={tmcImage}
+                        alt="TMC-2 preview"
+                        className="w-full h-full object-cover contrast-150 brightness-85 sepia-[0.25] group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-blue-300 border border-blue-500/30">
                         STEREO TRIPLET DEM
@@ -506,17 +533,23 @@ export default function MissionControlDashboard() {
                     </div>
                   </div>
 
-                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500">
+                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500 relative cursor-pointer hover:text-white transition-colors">
                     <span className="flex items-center gap-1.5 text-neutral-400">
                       <UploadCloud className="w-3.5 h-3.5 text-blue-400" />
                       <span>Drop final TMC-2 DEM here</span>
                     </span>
                     <span>SWATH: 20 km</span>
+                    <input
+                      type="file"
+                      accept=".zip, image/*, .tif, .tiff"
+                      onChange={(e) => handleFileUpload(e, setTmcImage)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
                   </div>
                 </div>
 
                 {/* Card 3: IIRS (80m/px) - Hyperspectral SWIR */}
-                <div className="border-2 border-dashed border-white/20 hover:border-purple-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
+                <div className="border-2 border-dashed border-white/20 hover:border-purple-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between relative">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
@@ -538,11 +571,12 @@ export default function MissionControlDashboard() {
 
                     {/* Crater Macro Image Container with Hyperspectral Gradient */}
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
-                      <div
-                        className="w-full h-full bg-cover bg-center invert hue-rotate-90 saturate-200 brightness-110 group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${sensorCardImg}")` }}
+                      <img
+                        src={iirsImage}
+                        alt="IIRS preview"
+                        className="w-full h-full object-cover invert hue-rotate-90 saturate-200 brightness-110 group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/30 via-pink-500/20 to-amber-500/30 mix-blend-color-dodge" />
+                      <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/30 via-pink-500/20 to-amber-500/30 mix-blend-color-dodge pointer-events-none" />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-purple-300 border border-purple-500/30">
                         SWIR (0.8 - 5.0 µm)
                       </div>
@@ -550,12 +584,18 @@ export default function MissionControlDashboard() {
                     </div>
                   </div>
 
-                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500">
+                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500 relative cursor-pointer hover:text-white transition-colors">
                     <span className="flex items-center gap-1.5 text-neutral-400">
                       <UploadCloud className="w-3.5 h-3.5 text-purple-400" />
                       <span>Drop final IIRS spectral cube here</span>
                     </span>
                     <span>256 BANDS</span>
+                    <input
+                      type="file"
+                      accept=".zip, image/*, .tif, .tiff"
+                      onChange={(e) => handleFileUpload(e, setIirsImage)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
                   </div>
                 </div>
               </div>
