@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   ChevronDown,
   UploadCloud,
+  Download,
 } from "lucide-react";
 import { StarsBackground } from "@/components/ui/stars";
 import { orbitron, sans, mono } from "@/lib/fonts";
@@ -584,17 +585,16 @@ export default function MissionControlDashboard() {
                 </div>
               </div>
 
-              {/* Right Side: Reset Button */}
-              <div className="flex items-center gap-3 shrink-0">
+              {/* Right Side: Action Buttons */}
+              <div className="flex items-center gap-4">
+                <button className="flex items-center gap-2 px-6 py-2.5 bg-cyan-500/10 border border-cyan-400/50 text-cyan-400 hover:bg-cyan-400 hover:text-black transition-all rounded-lg font-mono text-sm font-bold tracking-widest shadow-[0_0_15px_rgba(0,229,255,0.2)]">
+                  <Download className="w-4 h-4" /> DOWNLOAD DATA
+                </button>
                 <button
                   onClick={handleReturnToCommandCenter}
-                  className={cn(
-                    orbitron.className,
-                    "px-5 py-2.5 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg shadow-black/60 hover:border-white/40"
-                  )}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-black/40 border border-white/20 text-gray-300 hover:border-white/50 hover:text-white transition-all rounded-lg font-mono text-sm tracking-widest"
                 >
-                  <RotateCcw className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>RESET</span>
+                  RESET
                 </button>
               </div>
             </footer>
