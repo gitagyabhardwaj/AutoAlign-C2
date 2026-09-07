@@ -29,11 +29,6 @@ export default function MissionControlDashboard() {
   const [latitude, setLatitude] = useState("-43.31");
   const [longitude, setLongitude] = useState("-11.36");
 
-  // Dynamic Payload Image for Phase 2
-  const [payloadImage, setPayloadImage] = useState(
-    "https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?q=80&w=2500&auto=format&fit=crop&grayscale=true"
-  );
-
   // Simulation Stage (1 to 4)
   const [simulationStage, setSimulationStage] = useState(0);
 
@@ -98,12 +93,6 @@ export default function MissionControlDashboard() {
     setSimulationStage(0);
   };
 
-  const handlePresetClick = (latStr: string, lonStr: string, imageUrl: string) => {
-    setLatitude(latStr);
-    setLongitude(lonStr);
-    setPayloadImage(imageUrl);
-  };
-
   const stages = [
     {
       id: 1,
@@ -133,10 +122,7 @@ export default function MissionControlDashboard() {
 
   // Lunar surface placeholder image for final fused payload & sensor reference frames
   const fusedPayloadImg =
-    "https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?q=80&w=2500&auto=format&fit=crop&grayscale=true";
-
-  const sensorCardImg =
-    "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=800&auto=format&fit=crop&grayscale=true";
+    "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=2500&auto=format&fit=crop&grayscale=true";
 
   return (
     <main className={cn(sans.className, "relative w-screen h-screen overflow-hidden bg-[#07060c] text-white select-none")}>
@@ -199,13 +185,13 @@ export default function MissionControlDashboard() {
                 </div>
               </div>
 
-              {/* Sleek Rounded Lunar Fact Bubble */}
+              {/* WhatsApp-Style Translucent Blue Fact Bubble */}
               <div
                 onClick={() => setFactIndex((prev) => (prev + 1) % moonFacts.length)}
-                className="absolute bottom-6 left-6 z-20 max-w-[280px] bg-cyan-600/30 backdrop-blur-md border border-cyan-400/50 text-white text-sm p-4 rounded-2xl rounded-bl-none shadow-[0_4px_20px_rgba(0,229,255,0.15)] cursor-pointer hover:bg-cyan-600/40 transition-all select-none"
+                className="absolute bottom-12 left-12 z-20 max-w-sm bg-cyan-600/30 backdrop-blur-md border border-cyan-400/50 text-white text-sm p-4 rounded-2xl rounded-bl-none shadow-[0_4px_30px_rgba(0,229,255,0.2)] cursor-pointer hover:bg-cyan-600/40 transition-all select-none"
               >
                 <p className="leading-relaxed">{moonFacts[factIndex]}</p>
-                <span className="block mt-2 text-[10px] text-cyan-200 opacity-70">Tap for next fact...</span>
+                <span className="block mt-2 text-[10px] text-cyan-300 opacity-70">Tap for next fact...</span>
               </div>
             </section>
 
@@ -288,22 +274,31 @@ export default function MissionControlDashboard() {
                       <span className="text-[10px] font-mono uppercase text-neutral-500">Target Presets:</span>
                       <button
                         type="button"
-                        onClick={() => handlePresetClick("-43.31", "-11.36", "https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?q=80&w=2500&auto=format&fit=crop&grayscale=true")}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-cyan-900/40 text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                        onClick={() => {
+                          setLatitude("-43.31");
+                          setLongitude("-11.36");
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer"
                       >
                         Tycho Crater (-43.31°, -11.36°)
                       </button>
                       <button
                         type="button"
-                        onClick={() => handlePresetClick("-89.90", "0.00", "https://images.unsplash.com/photo-1628126235206-5260b9ea6441?q=80&w=2500&auto=format&fit=crop&grayscale=true")}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-cyan-900/40 text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                        onClick={() => {
+                          setLatitude("-89.90");
+                          setLongitude("0.00");
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer"
                       >
                         Shackleton (-89.90°, 0.00°)
                       </button>
                       <button
                         type="button"
-                        onClick={() => handlePresetClick("-53.00", "-169.00", "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=2500&auto=format&fit=crop&grayscale=true")}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-cyan-900/40 text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                        onClick={() => {
+                          setLatitude("-53.00");
+                          setLongitude("-169.00");
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-mono border border-white/10 bg-white/[0.03] hover:bg-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer"
                       >
                         Aitken Basin (-53.00°, -169.00°)
                       </button>
@@ -439,7 +434,9 @@ export default function MissionControlDashboard() {
             {/* ------------------------------------------------------------ */}
             <div
               className="h-screen w-full relative shrink-0 bg-cover bg-center overflow-hidden"
-              style={{ backgroundImage: `url("${payloadImage}")` }}
+              style={{
+                backgroundImage: `url("${fusedPayloadImg}")`,
+              }}
             >
               {/* Subtle vignette shadow gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
@@ -460,7 +457,7 @@ export default function MissionControlDashboard() {
             {/* ------------------------------------------------------------ */}
             {/* Section 2: Scrollable Raw Sensor Reference Frames Section     */}
             {/* ------------------------------------------------------------ */}
-            <div className="min-h-screen bg-[#050505] pt-24 px-12 pb-48 relative z-40">
+            <div className="min-h-screen bg-[#050505] pt-24 px-12 pb-36 relative z-40">
               {/* Section Header */}
               <div className="max-w-7xl mx-auto space-y-2 border-b border-white/10 pb-6">
                 <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[#00E5FF]">
@@ -502,7 +499,7 @@ export default function MissionControlDashboard() {
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <div
                         className="w-full h-full bg-cover bg-center grayscale brightness-90 contrast-125 group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${sensorCardImg}")` }}
+                        style={{ backgroundImage: `url("${fusedPayloadImg}")` }}
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-cyan-300 border border-cyan-500/30">
                         BAND: PAN (450-900nm)
@@ -545,7 +542,7 @@ export default function MissionControlDashboard() {
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <div
                         className="w-full h-full bg-cover bg-center contrast-150 brightness-85 sepia-[0.25] group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${sensorCardImg}")` }}
+                        style={{ backgroundImage: `url("${fusedPayloadImg}")` }}
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-blue-300 border border-blue-500/30">
                         STEREO TRIPLET DEM
@@ -588,7 +585,7 @@ export default function MissionControlDashboard() {
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <div
                         className="w-full h-full bg-cover bg-center invert hue-rotate-90 saturate-200 brightness-110 group-hover:scale-105 transition-transform duration-500"
-                        style={{ backgroundImage: `url("${sensorCardImg}")` }}
+                        style={{ backgroundImage: `url("${fusedPayloadImg}")` }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/30 via-pink-500/20 to-amber-500/30 mix-blend-color-dodge" />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-purple-300 border border-purple-500/30">
@@ -607,28 +604,25 @@ export default function MissionControlDashboard() {
                   </div>
                 </div>
               </div>
-
-              {/* Dedicated invisible spacer to push content above fixed bottom bar */}
-              <div className="h-40 w-full shrink-0"></div>
             </div>
 
             {/* ------------------------------------------------------------ */}
-            {/* Section 3: Fixed Frosted Black Glassmorphic Aerospace Bottom Bar */}
+            {/* Section 3: Fixed Translucent Blue Aerospace Bottom Bar       */}
             {/* ------------------------------------------------------------ */}
-            <footer className="fixed bottom-0 w-full h-24 bg-black/60 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-50 flex items-center justify-between px-12">
+            <footer className="fixed bottom-0 w-full h-24 bg-cyan-950/80 backdrop-blur-xl border-t border-cyan-500/50 z-50 flex items-center justify-between px-12 shadow-[0_-10px_35px_rgba(0,229,255,0.15)]">
               {/* Left Side: Target Coordinates */}
               <div className="flex items-center gap-3.5 min-w-0">
-                <div className="relative w-9 h-9 rounded-full bg-white/5 border border-white/15 flex items-center justify-center text-neutral-300 shrink-0 shadow-inner">
-                  <Crosshair className="w-4 h-4 animate-spin [animation-duration:8s] text-neutral-300" />
-                  <span className="absolute inset-0 rounded-full border border-white/20 animate-ping opacity-30" />
+                <div className="relative w-9 h-9 rounded-full bg-cyan-500/20 border border-cyan-400/60 flex items-center justify-center text-[#00E5FF] shrink-0 shadow-[0_0_12px_rgba(0,229,255,0.4)]">
+                  <Crosshair className="w-4 h-4 animate-spin [animation-duration:8s]" />
+                  <span className="absolute inset-0 rounded-full border border-[#00E5FF] animate-ping opacity-40" />
                 </div>
                 <div className="min-w-0 font-mono">
-                  <div className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(0,229,255,0.6)]" />
+                  <div className="text-[10px] uppercase tracking-widest text-cyan-300 font-semibold flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] shadow-[0_0_6px_#00E5FF]" />
                     <span>TARGET COORDINATES</span>
                   </div>
                   <div className="text-xs sm:text-sm font-semibold text-white truncate mt-0.5">
-                    LAT: <span className="text-gray-300">{latitude}°</span> | LON: <span className="text-gray-300">{longitude}°</span>
+                    LAT: <span className="text-[#00E5FF]">{latitude}°</span> | LON: <span className="text-[#00E5FF]">{longitude}°</span>
                   </div>
                 </div>
               </div>
@@ -639,10 +633,10 @@ export default function MissionControlDashboard() {
                   onClick={handleReturnToCommandCenter}
                   className={cn(
                     orbitron.className,
-                    "px-5 py-2.5 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg shadow-black/60 hover:border-white/40"
+                    "px-5 py-2.5 rounded-xl border border-cyan-400/40 bg-cyan-900/60 hover:bg-[#00E5FF] text-cyan-200 hover:text-black font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg shadow-black/60 hover:shadow-[0_0_25px_rgba(0,229,255,0.6)]"
                   )}
                 >
-                  <RotateCcw className="w-3.5 h-3.5 text-neutral-400" />
+                  <RotateCcw className="w-3.5 h-3.5" />
                   <span>RESET</span>
                 </button>
               </div>
