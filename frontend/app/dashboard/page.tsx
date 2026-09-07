@@ -500,15 +500,28 @@ export default function MissionControlDashboard() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
 
               {/* HUD Badge: Composite Payload */}
-              <div className="absolute top-6 left-6 z-20 pointer-events-none flex items-center gap-2 bg-black/75 px-3.5 py-1.5 rounded-full border border-cyan-500/40 text-xs font-mono text-cyan-300 backdrop-blur-md shadow-xl">
+              <div className="absolute top-6 left-6 z-20 pointer-events-none flex items-center gap-2 bg-black/80 px-3.5 py-1.5 rounded-full border border-cyan-500/40 text-xs font-mono text-cyan-300 backdrop-blur-md shadow-xl">
                 <span className="w-2 h-2 rounded-full bg-[#00E5FF] shadow-[0_0_8px_#00E5FF] animate-pulse" />
-                <span>CHANDRAYAAN-2 COMPOSITE LUNAR PAYLOAD (FUSED OHRC + TMC-2 + IIRS)</span>
+                <span>CHANDRAYAAN-2 COMPOSITE LUNAR PAYLOAD</span>
               </div>
 
-              {/* Floating Top Center Alignment Metric */}
-              <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none bg-cyan-950/80 px-4 py-1.5 rounded-full border border-cyan-400/50 text-xs font-mono text-cyan-300 backdrop-blur-md shadow-[0_0_20px_rgba(0,229,255,0.3)] flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-[#00E5FF]" />
-                <span>SUB-PIXEL CONVERGED (0.38 px RMSE)</span>
+              {/* Top Right Floating Telemetry HUD: RMSE, Inlier Match Count, Inlier Ratio */}
+              <div className="absolute top-6 right-6 z-20 pointer-events-none flex items-center gap-4 bg-black/85 backdrop-blur-xl border border-cyan-500/50 px-4 py-2 rounded-xl shadow-[0_0_30px_rgba(0,229,255,0.2)] font-mono">
+                <div className="flex items-center gap-2 pr-4 border-r border-white/10">
+                  <Sparkles className="w-3.5 h-3.5 text-[#00E5FF]" />
+                  <span className="text-[10px] text-gray-400 uppercase tracking-wider">RMSE:</span>
+                  <span className="text-xs font-bold text-cyan-400">0.38 px</span>
+                </div>
+                <div className="flex items-center gap-2 pr-4 border-r border-white/10">
+                  <Activity className="w-3.5 h-3.5 text-[#00E5FF]" />
+                  <span className="text-[10px] text-gray-400 uppercase tracking-wider">Inliers:</span>
+                  <span className="text-xs font-bold text-cyan-400">1,482</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#00E5FF]" />
+                  <span className="text-[10px] text-gray-400 uppercase tracking-wider">Ratio:</span>
+                  <span className="text-xs font-bold text-cyan-400">89.4%</span>
+                </div>
               </div>
             </div>
 
@@ -517,17 +530,37 @@ export default function MissionControlDashboard() {
             {/* ------------------------------------------------------------ */}
             <div className="min-h-screen bg-[#050505] pt-24 px-12 pb-48 relative z-40">
               {/* Section Header */}
-              <div className="max-w-7xl mx-auto space-y-2 border-b border-white/10 pb-6">
-                <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[#00E5FF]">
-                  <Layers className="w-4 h-4 text-[#00E5FF]" />
-                  <span>PAYLOAD BREAKDOWN ARCHITECTURE</span>
+              <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">
+                <div>
+                  <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[#00E5FF]">
+                    <Layers className="w-4 h-4 text-[#00E5FF]" />
+                    <span>PAYLOAD BREAKDOWN ARCHITECTURE</span>
+                  </div>
+                  <h2 className={cn(orbitron.className, "text-2xl md:text-3xl font-bold tracking-tight text-white mt-1")}>
+                    RAW SENSOR REFERENCE FRAMES
+                  </h2>
+                  <p className="text-xs font-mono text-neutral-400 max-w-2xl mt-1">
+                    Inspect the three independent sensor streams fused into the composite payload. Each sensor captures a distinct spatial and spectral regime over the lunar surface.
+                  </p>
                 </div>
-                <h2 className={cn(orbitron.className, "text-2xl md:text-3xl font-bold tracking-tight text-white")}>
-                  RAW SENSOR REFERENCE FRAMES
-                </h2>
-                <p className="text-xs font-mono text-neutral-400 max-w-2xl">
-                  Inspect the three independent sensor streams fused into the composite payload. Each sensor captures a distinct spatial and spectral regime over the lunar surface.
-                </p>
+
+                {/* Telemetry Registration Summary Chips */}
+                <div className="flex items-center gap-4 bg-neutral-900/90 border border-cyan-500/30 px-5 py-3 rounded-xl font-mono text-xs shrink-0 shadow-lg backdrop-blur-md">
+                  <div>
+                    <span className="text-[9px] text-gray-400 uppercase tracking-wider block">REGISTRATION RMSE</span>
+                    <span className="text-cyan-400 font-bold text-sm">0.38 px</span>
+                  </div>
+                  <div className="w-[1px] h-7 bg-white/10" />
+                  <div>
+                    <span className="text-[9px] text-gray-400 uppercase tracking-wider block">INLIER MATCHES</span>
+                    <span className="text-cyan-400 font-bold text-sm">1,482</span>
+                  </div>
+                  <div className="w-[1px] h-7 bg-white/10" />
+                  <div>
+                    <span className="text-[9px] text-gray-400 uppercase tracking-wider block">INLIER RATIO</span>
+                    <span className="text-cyan-400 font-bold text-sm">89.4%</span>
+                  </div>
+                </div>
               </div>
 
               {/* 3-Column Grid for the 3 Sensor Reference Frames */}
@@ -564,6 +597,22 @@ export default function MissionControlDashboard() {
                         BAND: PAN (450-900nm)
                       </div>
                       <div className="absolute inset-0 border-2 border-dashed border-white/10 rounded-xl pointer-events-none" />
+                    </div>
+
+                    {/* Card Telemetry Strip */}
+                    <div className="grid grid-cols-3 gap-2 bg-black/60 border border-cyan-500/20 rounded-lg p-2.5 font-mono text-center mt-3">
+                      <div>
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider block">RMSE</span>
+                        <span className="text-xs font-bold text-cyan-400">0.24 px</span>
+                      </div>
+                      <div className="border-x border-white/10">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider block">Inliers</span>
+                        <span className="text-xs font-bold text-cyan-400">1,840</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider block">Ratio</span>
+                        <span className="text-xs font-bold text-cyan-400">94.2%</span>
+                      </div>
                     </div>
                   </div>
 
@@ -614,6 +663,22 @@ export default function MissionControlDashboard() {
                         STEREO TRIPLET DEM
                       </div>
                       <div className="absolute inset-0 border-2 border-dashed border-white/10 rounded-xl pointer-events-none" />
+                    </div>
+
+                    {/* Card Telemetry Strip */}
+                    <div className="grid grid-cols-3 gap-2 bg-black/60 border border-blue-500/20 rounded-lg p-2.5 font-mono text-center mt-3">
+                      <div>
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider block">RMSE</span>
+                        <span className="text-xs font-bold text-blue-400">0.38 px</span>
+                      </div>
+                      <div className="border-x border-white/10">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider block">Inliers</span>
+                        <span className="text-xs font-bold text-blue-400">1,482</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider block">Ratio</span>
+                        <span className="text-xs font-bold text-blue-400">89.4%</span>
+                      </div>
                     </div>
                   </div>
 
@@ -666,6 +731,22 @@ export default function MissionControlDashboard() {
                       </div>
                       <div className="absolute inset-0 border-2 border-dashed border-white/10 rounded-xl pointer-events-none" />
                     </div>
+
+                    {/* Card Telemetry Strip */}
+                    <div className="grid grid-cols-3 gap-2 bg-black/60 border border-purple-500/20 rounded-lg p-2.5 font-mono text-center mt-3">
+                      <div>
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider block">RMSE</span>
+                        <span className="text-xs font-bold text-purple-400">0.51 px</span>
+                      </div>
+                      <div className="border-x border-white/10">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider block">Inliers</span>
+                        <span className="text-xs font-bold text-purple-400">984</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider block">Ratio</span>
+                        <span className="text-xs font-bold text-purple-400">81.3%</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500 relative cursor-pointer hover:text-white transition-colors">
@@ -706,6 +787,22 @@ export default function MissionControlDashboard() {
                   <div className="text-xs sm:text-sm font-semibold text-white truncate mt-0.5">
                     LAT: <span className="text-gray-300">{latitude}°</span> | LON: <span className="text-gray-300">{longitude}°</span>
                   </div>
+                </div>
+              </div>
+
+              {/* Center: Global Telemetry Metrics */}
+              <div className="hidden lg:flex items-center gap-4 pl-6 border-l border-white/10 font-mono">
+                <div className="bg-black/50 border border-cyan-500/20 px-3.5 py-1.5 rounded-lg flex items-center gap-2">
+                  <span className="text-[9px] uppercase tracking-wider text-gray-400">RMSE:</span>
+                  <span className="text-xs font-bold text-cyan-400">0.38 px</span>
+                </div>
+                <div className="bg-black/50 border border-cyan-500/20 px-3.5 py-1.5 rounded-lg flex items-center gap-2">
+                  <span className="text-[9px] uppercase tracking-wider text-gray-400">Inliers:</span>
+                  <span className="text-xs font-bold text-cyan-400">1,482</span>
+                </div>
+                <div className="bg-black/50 border border-cyan-500/20 px-3.5 py-1.5 rounded-lg flex items-center gap-2">
+                  <span className="text-[9px] uppercase tracking-wider text-gray-400">Ratio:</span>
+                  <span className="text-xs font-bold text-cyan-400">89.4%</span>
                 </div>
               </div>
 
