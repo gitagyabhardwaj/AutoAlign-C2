@@ -49,3 +49,7 @@ output_analysis_ready/*.tif
 output_analysis_ready/*.img
 !output_analysis_ready/*.png
 !output_analysis_ready/*.vrt
+
+# Next.js Auto-generated Agent Rules
+AGENTS.md
+CLAUDE.md

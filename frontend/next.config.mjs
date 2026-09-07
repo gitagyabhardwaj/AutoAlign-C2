@@ -7,6 +7,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    agentRules: false,
+  },
 };
 
 export default nextConfig;
