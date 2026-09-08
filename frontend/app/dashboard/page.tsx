@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -17,42 +17,60 @@ import {
   ChevronDown,
   UploadCloud,
   Download,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { StarsBackground } from "@/components/ui/stars";
 import { orbitron, sans, mono } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
+import {
+  runPipeline,
+  downloadAlignedTiff,
+  type PipelineResult,
+  type PipelineResponse,
+} from "@/lib/api";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface UploadedSensor {
+  file: File;
+  previewUrl: string;
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function MissionControlDashboard() {
-  // 2-Phase Mission Control State: 'setup' | 'simulating' | 'payload'
-  const [missionState, setMissionState] = useState<"setup" | "simulating" | "payload">("setup");
+  // Mission lifecycle: setup → processing → payload
+  const [missionState, setMissionState] = useState<
+    "setup" | "processing" | "payload"
+  >("setup");
 
-  // Coordinate Inputs
-  const [latitude, setLatitude] = useState("-43.31");
-  const [longitude, setLongitude] = useState("-11.36");
+  // Uploaded file state (keeps both File + blob preview URL)
+  const [ohrcUpload, setOhrcUpload] = useState<UploadedSensor | null>(null);
+  const [tmcUpload, setTmcUpload] = useState<UploadedSensor | null>(null);
+  const [iirsUpload, setIirsUpload] = useState<UploadedSensor | null>(null);
 
-  // Dynamic Payload Image for Phase 2
-  const [payloadImage, setPayloadImage] = useState(
-    "https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?q=80&w=2500&auto=format&fit=crop&grayscale=true"
+  // Pipeline result from the backend
+  const [pipelineResult, setPipelineResult] = useState<PipelineResult | null>(
+    null
   );
 
-  // Sensor reference frames image states
-  const defaultSensorImg =
-    "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=800&auto=format&fit=crop&grayscale=true";
-  const [ohrcImage, setOhrcImage] = useState<string | null>(null);
-  const [tmcImage, setTmcImage] = useState<string | null>(null);
-  const [iirsImage, setIirsImage] = useState<string | null>(null);
+  // Processing state
+  const [processingStage, setProcessingStage] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Simulation Stage (1 to 4)
-  const [simulationStage, setSimulationStage] = useState(0);
-
-  // Interactive Fact Bubble Index & Data
+  // Interactive Fact Bubble
   const [factIndex, setFactIndex] = useState(0);
   const moonFacts = [
     "Did you know? Chandrayaan-2's OHRC camera provides the highest resolution lunar images ever taken (0.25m/px).",
     "The lunar south pole features permanently shadowed craters that act as cold traps for water ice.",
     "TMC-2 on board the orbiter maps the lunar surface in 3D to help us understand its geological evolution.",
-    "The IIRS sensor maps lunar mineralogy in the infrared spectrum to locate hydroxyl and water signatures."
+    "The IIRS sensor maps lunar mineralogy in the infrared spectrum to locate hydroxyl and water signatures.",
   ];
+
+  // Default placeholder for sensor cards before results arrive
+  const defaultSensorImg =
+    "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=800&auto=format&fit=crop&grayscale=true";
 
   // Dynamic import of @google/model-viewer on client mount
   useEffect(() => {
@@ -61,113 +79,153 @@ export default function MissionControlDashboard() {
     );
   }, []);
 
-  // 4-Stage Simulation Progression: ~4 seconds total, then wait 1 second and transition to 'payload'
-  useEffect(() => {
-    if (missionState !== "simulating") return;
-
-    setSimulationStage(1);
-
-    const t1 = setTimeout(() => {
-      setSimulationStage(2);
-    }, 1000);
-
-    const t2 = setTimeout(() => {
-      setSimulationStage(3);
-    }, 2000);
-
-    const t3 = setTimeout(() => {
-      setSimulationStage(4);
-    }, 3000);
-
-    const t4 = setTimeout(() => {
-      // Stage 4 complete; wait 1 second, then change missionState to 'payload'
-      const tPayload = setTimeout(() => {
-        setMissionState("payload");
-      }, 1000);
-
-      return () => clearTimeout(tPayload);
-    }, 4000);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
-    };
-  }, [missionState]);
-
-  const handleInitiatePipeline = (e: React.FormEvent) => {
-    e.preventDefault();
-    setMissionState("simulating");
-  };
-
-  const handleReturnToCommandCenter = () => {
-    setMissionState("setup");
-    setSimulationStage(0);
-  };
-
-  const handlePresetClick = (latStr: string, lonStr: string, imageUrl: string) => {
-    setLatitude(latStr);
-    setLongitude(lonStr);
-    setPayloadImage(imageUrl);
-  };
+  // ─── File Upload Handler ─────────────────────────────────────────────────
 
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
-    setSensorImage: React.Dispatch<React.SetStateAction<string | null>>
+    setter: React.Dispatch<React.SetStateAction<UploadedSensor | null>>
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Creates a temporary local URL to preview the uploaded file
-      const imageUrl = URL.createObjectURL(file);
-      setSensorImage(imageUrl);
+      const previewUrl = URL.createObjectURL(file);
+      setter({ file, previewUrl });
     }
   };
+
+  // ─── Pipeline Execution ──────────────────────────────────────────────────
+
+  const handleInitiatePipeline = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    // Validate: OHRC + TMC are required
+    if (!ohrcUpload || !tmcUpload) {
+      setErrorMessage("Please upload both OHRC and TMC-2 sensor archives before running the pipeline.");
+      return;
+    }
+
+    setMissionState("processing");
+    setProcessingStage(1);
+
+    try {
+      // Animate the stages while the real backend processes
+      const stageTimer = setInterval(() => {
+        setProcessingStage((prev) => {
+          if (prev < 4) return prev + 1;
+          return prev;
+        });
+      }, 2500);
+
+      const response: PipelineResponse = await runPipeline(
+        ohrcUpload.file,
+        tmcUpload.file,
+        iirsUpload?.file
+      );
+
+      clearInterval(stageTimer);
+
+      if (!response.success) {
+        const errMsg = "error" in response ? response.error : "Unknown pipeline error.";
+        setErrorMessage(errMsg);
+        setMissionState("setup");
+        setProcessingStage(0);
+        return;
+      }
+
+      // Success! Store the result and show all stages as complete before transitioning
+      const result = response as PipelineResult;
+      setPipelineResult(result);
+      setProcessingStage(4);
+
+      // Brief pause to let the user see all 4 checkmarks before transition
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      setMissionState("payload");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Network error — is the backend running on localhost:8000?";
+      setErrorMessage(message);
+      setMissionState("setup");
+      setProcessingStage(0);
+    }
+  };
+
+  // ─── Reset ───────────────────────────────────────────────────────────────
+
+  const handleReturnToCommandCenter = () => {
+    setMissionState("setup");
+    setProcessingStage(0);
+    setPipelineResult(null);
+    setErrorMessage(null);
+  };
+
+  // ─── Download Handler ────────────────────────────────────────────────────
+
+  const handleDownload = async () => {
+    try {
+      await downloadAlignedTiff();
+    } catch {
+      setErrorMessage("Download failed. The GeoTIFF may not have been exported.");
+    }
+  };
+
+  // ─── Stage Definitions ───────────────────────────────────────────────────
 
   const stages = [
     {
       id: 1,
       title: "GeoTIFF Ingestion",
-      desc: "Parsing multi-band OHRC, TMC-2 & IIRS raster streams",
+      desc: "Extracting PDS4 archives and loading raster bands",
       subtext: "Payload: 16-bit GeoTIFF / PDS4 CRS Projection",
     },
     {
       id: 2,
-      title: "Scale & Feature Matching",
-      desc: "SuperPoint + LoFTR cross-sensor keypoints",
-      subtext: "Matches: 1,482 keypoints / Inlier Ratio: 89.4%",
+      title: "LoFTR Feature Matching",
+      desc: "Transformer-based deep geometric matching on CUDA",
+      subtext: "Engine: kornia.feature.LoFTR / Attention-based",
     },
     {
       id: 3,
-      title: "Projective Homography",
-      desc: "Non-linear RANSAC + Spline surface warping",
-      subtext: "Projection: Affine + Thin-Plate Spline (TPS)",
+      title: "RANSAC Homography",
+      desc: "Outlier rejection and projective warp estimation",
+      subtext: "Method: cv2.findHomography + RANSAC",
     },
     {
       id: 4,
-      title: "Sub-Pixel Verification",
-      desc: "Computing target RMSE convergence < 1.0 px",
-      subtext: "Residual: 0.38 px RMS / Multimodal boundary verified",
+      title: "Validation & Export",
+      desc: "Computing RMSE, checkerboard, and GeoTIFF export",
+      subtext: "Output: Aligned_Composite.tif + quality metrics",
     },
   ];
 
-  // Lunar surface placeholder image for final fused payload & sensor reference frames
-  const fusedPayloadImg =
-    "https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?q=80&w=2500&auto=format&fit=crop&grayscale=true";
+  // ─── Metric Helpers ──────────────────────────────────────────────────────
 
-  const sensorCardImg =
-    "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=800&auto=format&fit=crop&grayscale=true";
+  const metrics = pipelineResult?.metrics;
+  const displayRmse = metrics ? metrics.rmse.toFixed(2) : "—";
+  const displayInliers = metrics ? metrics.num_inliers.toLocaleString() : "—";
+  const displayRatio = metrics
+    ? metrics.inlier_ratio.toFixed(1) + "%"
+    : "—";
+
+  // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <main className={cn(sans.className, "relative w-screen h-screen overflow-hidden bg-[#07060c] text-white select-none")}>
+    <main
+      className={cn(
+        sans.className,
+        "relative w-screen h-screen overflow-hidden bg-[#07060c] text-white select-none"
+      )}
+    >
       {/* Absolute Cosmic Starfield Base Layer */}
-      <StarsBackground factor={0.02} speed={50} className="absolute inset-0 z-0 pointer-events-none" />
+      <StarsBackground
+        factor={0.02}
+        speed={50}
+        className="absolute inset-0 z-0 pointer-events-none"
+      />
 
       <AnimatePresence mode="wait">
         {/* ================================================================ */}
-        {/* PHASE 1: The 50/50 Command Center ('setup' | 'simulating')       */}
+        {/* PHASE 1: The 50/50 Command Center ('setup' | 'processing')      */}
         {/* ================================================================ */}
-        {(missionState === "setup" || missionState === "simulating") && (
+        {(missionState === "setup" || missionState === "processing") && (
           <motion.div
             key="phase-1-command-center"
             initial={{ opacity: 0 }}
@@ -196,7 +254,7 @@ export default function MissionControlDashboard() {
                 </div>
               </div>
 
-              {/* Centered Moon 3D Model with Perfectly Clean Container */}
+              {/* Centered Moon 3D Model */}
               <div className="absolute inset-0 z-0 flex items-center justify-center p-4">
                 <div className="w-[85%] h-[85%] max-w-[650px] max-h-[650px] m-auto flex items-center justify-center">
                   <model-viewer
@@ -221,169 +279,237 @@ export default function MissionControlDashboard() {
 
               {/* Sleek Rounded Lunar Fact Bubble */}
               <div
-                onClick={() => setFactIndex((prev) => (prev + 1) % moonFacts.length)}
+                onClick={() =>
+                  setFactIndex((prev) => (prev + 1) % moonFacts.length)
+                }
                 className="absolute bottom-6 left-6 z-20 max-w-[280px] bg-cyan-600/30 backdrop-blur-md border border-cyan-400/50 text-white text-sm p-4 rounded-2xl rounded-bl-none shadow-[0_4px_20px_rgba(0,229,255,0.15)] cursor-pointer hover:bg-cyan-600/40 transition-all select-none"
               >
                 <p className="leading-relaxed">{moonFacts[factIndex]}</p>
-                <span className="block mt-2 text-[10px] text-cyan-200 opacity-70">Tap for next fact...</span>
+                <span className="block mt-2 text-[10px] text-cyan-200 opacity-70">
+                  Tap for next fact...
+                </span>
               </div>
             </section>
 
             {/* ------------------------------------------------------------ */}
-            {/* RIGHT HALF: Mission Targeting & Simulation (Scrollable)      */}
+            {/* RIGHT HALF: Mission Targeting & Pipeline Control              */}
             {/* ------------------------------------------------------------ */}
             <section className="relative h-full w-full overflow-y-auto p-6 md:p-8 space-y-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent flex flex-col justify-center">
-              {/* Header Title with Orbitron font */}
+              {/* Header Title */}
               <div className="pb-4 border-b border-white/10 space-y-1">
                 <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[#00E5FF]">
                   <Compass className="w-3.5 h-3.5 text-[#00E5FF]" />
                   <span>CHANDRAYAAN-2 FLIGHT TERMINAL</span>
                 </div>
-                <h1 className={cn(orbitron.className, "text-xl md:text-2xl font-bold tracking-tight text-white")}>
+                <h1
+                  className={cn(
+                    orbitron.className,
+                    "text-xl md:text-2xl font-bold tracking-tight text-white"
+                  )}
+                >
                   Sensor Data Ingestion
                 </h1>
                 <p className="text-xs text-neutral-400">
-                  Upload raw .zip photo archives for OHRC, TMC-2, and IIRS sensors to initiate multi-sensor fusion.
+                  Upload raw .zip photo archives for OHRC, TMC-2, and IIRS
+                  sensors to initiate multi-sensor fusion.
                 </p>
               </div>
 
-              {/* Target Coordinates Input Form */}
+              {/* Error Message */}
+              {errorMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-start gap-3 p-4 rounded-xl border border-red-500/40 bg-red-950/40 backdrop-blur-md"
+                >
+                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-red-300 font-medium">
+                      Pipeline Error
+                    </p>
+                    <p className="text-xs text-red-400/80 mt-1">
+                      {errorMessage}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setErrorMessage(null)}
+                    className="ml-auto text-red-400 hover:text-red-200 text-xs"
+                  >
+                    ✕
+                  </button>
+                </motion.div>
+              )}
+
+              {/* Upload Cards & Pipeline Button */}
               <div className="p-6 rounded-2xl border border-white/10 bg-neutral-950/80 backdrop-blur-xl shadow-2xl space-y-5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-mono uppercase tracking-wider text-white font-semibold flex items-center gap-2">
                     <Crosshair className="w-4 h-4 text-[#00E5FF]" />
                     SENSOR ARCHIVE UPLOADS
                   </span>
-                  <span className="text-[10px] font-mono text-neutral-500">PDS4-CRS / ELLIPSOID</span>
+                  <span className="text-[10px] font-mono text-neutral-500">
+                    PDS4-CRS / ELLIPSOID
+                  </span>
                 </div>
 
                 <form onSubmit={handleInitiatePipeline} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* OHRC Upload */}
-                    {ohrcImage ? (
+                    {ohrcUpload ? (
                       <div className="bg-black/60 border border-cyan-500/60 p-3 rounded-lg flex flex-col relative w-full h-full shadow-[0_0_15px_rgba(0,229,255,0.1)]">
                         <div className="flex justify-between items-center mb-2">
-                          <span className="text-cyan-400 font-bold text-xs tracking-widest">OHRC</span>
-                          <span className="text-[9px] px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 rounded border border-cyan-500/30">LOCKED</span>
+                          <span className="text-cyan-400 font-bold text-xs tracking-widest">
+                            OHRC
+                          </span>
+                          <span className="text-[9px] px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 rounded border border-cyan-500/30">
+                            LOCKED
+                          </span>
                         </div>
-                        
-                        <img src={ohrcImage} alt="OHRC Preview" className="w-full h-24 object-cover rounded mb-3 border border-white/10 grayscale contrast-125" />
-                        
-                        <div className="bg-black/80 p-2 rounded border border-white/5 text-left space-y-1.5 w-full">
-                          <div className="text-[10px] text-gray-400 flex justify-between"><span>RMSE:</span> <span className="text-cyan-400 font-mono">0.38 px</span></div>
-                          <div className="text-[10px] text-gray-400 flex justify-between"><span>Inliers:</span> <span className="text-cyan-400 font-mono">1,482</span></div>
-                          <div className="text-[10px] text-gray-400 flex justify-between"><span>Ratio:</span> <span className="text-cyan-400 font-mono">89.4%</span></div>
-                        </div>
+                        <img
+                          src={ohrcUpload.previewUrl}
+                          alt="OHRC Preview"
+                          className="w-full h-24 object-cover rounded mb-3 border border-white/10 grayscale contrast-125"
+                        />
+                        <p className="text-[10px] text-gray-400 truncate">
+                          {ohrcUpload.file.name}
+                        </p>
                         <input
                           type="file"
                           accept=".zip, image/*, .tif, .tiff"
-                          onChange={(e) => handleFileUpload(e, setOhrcImage)}
+                          onChange={(e) => handleFileUpload(e, setOhrcUpload)}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
                       </div>
                     ) : (
                       <div className="bg-black/60 border border-dashed border-cyan-500/40 p-6 rounded-lg flex flex-col items-center justify-center space-y-2 hover:bg-cyan-950/30 hover:border-cyan-400 transition-all cursor-pointer relative">
-                        <span className="text-cyan-400 font-bold text-xs tracking-widest">OHRC</span>
-                        <span className="text-[10px] text-gray-500">Select .zip</span>
+                        <span className="text-cyan-400 font-bold text-xs tracking-widest">
+                          OHRC
+                        </span>
+                        <UploadCloud className="w-6 h-6 text-cyan-500/50" />
+                        <span className="text-[10px] text-gray-500">
+                          Select .zip
+                        </span>
                         <input
                           type="file"
                           accept=".zip, image/*, .tif, .tiff"
-                          onChange={(e) => handleFileUpload(e, setOhrcImage)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                      </div>
-                    )}
-                    
-                    {/* TMC-2 Upload */}
-                    {tmcImage ? (
-                      <div className="bg-black/60 border border-cyan-500/60 p-3 rounded-lg flex flex-col relative w-full h-full shadow-[0_0_15px_rgba(0,229,255,0.1)]">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-cyan-400 font-bold text-xs tracking-widest">TMC-2</span>
-                          <span className="text-[9px] px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 rounded border border-cyan-500/30">LOCKED</span>
-                        </div>
-                        
-                        <img src={tmcImage} alt="TMC-2 Preview" className="w-full h-24 object-cover rounded mb-3 border border-white/10 contrast-150 brightness-85 sepia-[0.25]" />
-                        
-                        <div className="bg-black/80 p-2 rounded border border-white/5 text-left space-y-1.5 w-full">
-                          <div className="text-[10px] text-gray-400 flex justify-between"><span>RMSE:</span> <span className="text-cyan-400 font-mono">0.42 px</span></div>
-                          <div className="text-[10px] text-gray-400 flex justify-between"><span>Inliers:</span> <span className="text-cyan-400 font-mono">1,120</span></div>
-                          <div className="text-[10px] text-gray-400 flex justify-between"><span>Ratio:</span> <span className="text-cyan-400 font-mono">84.2%</span></div>
-                        </div>
-                        <input
-                          type="file"
-                          accept=".zip, image/*, .tif, .tiff"
-                          onChange={(e) => handleFileUpload(e, setTmcImage)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                      </div>
-                    ) : (
-                      <div className="bg-black/60 border border-dashed border-cyan-500/40 p-6 rounded-lg flex flex-col items-center justify-center space-y-2 hover:bg-cyan-950/30 hover:border-cyan-400 transition-all cursor-pointer relative">
-                        <span className="text-cyan-400 font-bold text-xs tracking-widest">TMC-2</span>
-                        <span className="text-[10px] text-gray-500">Select .zip</span>
-                        <input
-                          type="file"
-                          accept=".zip, image/*, .tif, .tiff"
-                          onChange={(e) => handleFileUpload(e, setTmcImage)}
+                          onChange={(e) => handleFileUpload(e, setOhrcUpload)}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
                       </div>
                     )}
 
-                    {/* IIRS Upload */}
-                    {iirsImage ? (
+                    {/* TMC-2 Upload */}
+                    {tmcUpload ? (
                       <div className="bg-black/60 border border-cyan-500/60 p-3 rounded-lg flex flex-col relative w-full h-full shadow-[0_0_15px_rgba(0,229,255,0.1)]">
                         <div className="flex justify-between items-center mb-2">
-                          <span className="text-cyan-400 font-bold text-xs tracking-widest">IIRS</span>
-                          <span className="text-[9px] px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 rounded border border-cyan-500/30">LOCKED</span>
+                          <span className="text-cyan-400 font-bold text-xs tracking-widest">
+                            TMC-2
+                          </span>
+                          <span className="text-[9px] px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 rounded border border-cyan-500/30">
+                            LOCKED
+                          </span>
                         </div>
-                        
-                        <img src={iirsImage} alt="IIRS Preview" className="w-full h-24 object-cover rounded mb-3 border border-white/10 invert hue-rotate-90 saturate-200 brightness-110" />
-                        
-                        <div className="bg-black/80 p-2 rounded border border-white/5 text-left space-y-1.5 w-full">
-                          <div className="text-[10px] text-gray-400 flex justify-between"><span>RMSE:</span> <span className="text-cyan-400 font-mono">0.51 px</span></div>
-                          <div className="text-[10px] text-gray-400 flex justify-between"><span>Inliers:</span> <span className="text-cyan-400 font-mono">984</span></div>
-                          <div className="text-[10px] text-gray-400 flex justify-between"><span>Ratio:</span> <span className="text-cyan-400 font-mono">81.3%</span></div>
-                        </div>
+                        <img
+                          src={tmcUpload.previewUrl}
+                          alt="TMC-2 Preview"
+                          className="w-full h-24 object-cover rounded mb-3 border border-white/10 contrast-150 brightness-85 sepia-[0.25]"
+                        />
+                        <p className="text-[10px] text-gray-400 truncate">
+                          {tmcUpload.file.name}
+                        </p>
                         <input
                           type="file"
                           accept=".zip, image/*, .tif, .tiff"
-                          onChange={(e) => handleFileUpload(e, setIirsImage)}
+                          onChange={(e) => handleFileUpload(e, setTmcUpload)}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
                       </div>
                     ) : (
                       <div className="bg-black/60 border border-dashed border-cyan-500/40 p-6 rounded-lg flex flex-col items-center justify-center space-y-2 hover:bg-cyan-950/30 hover:border-cyan-400 transition-all cursor-pointer relative">
-                        <span className="text-cyan-400 font-bold text-xs tracking-widest">IIRS</span>
-                        <span className="text-[10px] text-gray-500">Select .zip</span>
+                        <span className="text-cyan-400 font-bold text-xs tracking-widest">
+                          TMC-2
+                        </span>
+                        <UploadCloud className="w-6 h-6 text-cyan-500/50" />
+                        <span className="text-[10px] text-gray-500">
+                          Select .zip
+                        </span>
                         <input
                           type="file"
                           accept=".zip, image/*, .tif, .tiff"
-                          onChange={(e) => handleFileUpload(e, setIirsImage)}
+                          onChange={(e) => handleFileUpload(e, setTmcUpload)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    )}
+
+                    {/* IIRS Upload (Optional) */}
+                    {iirsUpload ? (
+                      <div className="bg-black/60 border border-cyan-500/60 p-3 rounded-lg flex flex-col relative w-full h-full shadow-[0_0_15px_rgba(0,229,255,0.1)]">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-cyan-400 font-bold text-xs tracking-widest">
+                            IIRS
+                          </span>
+                          <span className="text-[9px] px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 rounded border border-cyan-500/30">
+                            LOCKED
+                          </span>
+                        </div>
+                        <img
+                          src={iirsUpload.previewUrl}
+                          alt="IIRS Preview"
+                          className="w-full h-24 object-cover rounded mb-3 border border-white/10 invert hue-rotate-90 saturate-200 brightness-110"
+                        />
+                        <p className="text-[10px] text-gray-400 truncate">
+                          {iirsUpload.file.name}
+                        </p>
+                        <input
+                          type="file"
+                          accept=".zip, image/*, .tif, .tiff"
+                          onChange={(e) => handleFileUpload(e, setIirsUpload)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    ) : (
+                      <div className="bg-black/60 border border-dashed border-cyan-500/40 p-6 rounded-lg flex flex-col items-center justify-center space-y-2 hover:bg-cyan-950/30 hover:border-cyan-400 transition-all cursor-pointer relative">
+                        <span className="text-cyan-400 font-bold text-xs tracking-widest">
+                          IIRS
+                        </span>
+                        <UploadCloud className="w-6 h-6 text-purple-500/50" />
+                        <span className="text-[10px] text-gray-500">
+                          Optional .zip
+                        </span>
+                        <input
+                          type="file"
+                          accept=".zip, image/*, .tif, .tiff"
+                          onChange={(e) => handleFileUpload(e, setIirsUpload)}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
                       </div>
                     )}
                   </div>
 
-                  {/* Large Glowing Cyan INITIATE PIPELINE Button (Hidden when simulating) */}
+                  {/* INITIATE PIPELINE Button (visible only in setup) */}
                   {missionState === "setup" && (
                     <motion.button
                       type="submit"
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
+                      disabled={!ohrcUpload || !tmcUpload}
                       className={cn(
                         orbitron.className,
-                        "w-full mt-3 bg-[#00E5FF] hover:bg-[#33ebff] text-black text-xs font-bold uppercase tracking-[0.2em] py-4 px-6 rounded-xl flex items-center justify-center gap-2.5 shadow-[0_0_30px_rgba(0,229,255,0.5)] hover:shadow-[0_0_45px_rgba(0,229,255,0.8)] transition-all cursor-pointer border border-[#00E5FF]"
+                        "w-full mt-3 text-xs font-bold uppercase tracking-[0.2em] py-4 px-6 rounded-xl flex items-center justify-center gap-2.5 transition-all cursor-pointer border",
+                        ohrcUpload && tmcUpload
+                          ? "bg-[#00E5FF] hover:bg-[#33ebff] text-black shadow-[0_0_30px_rgba(0,229,255,0.5)] hover:shadow-[0_0_45px_rgba(0,229,255,0.8)] border-[#00E5FF]"
+                          : "bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed shadow-none"
                       )}
                     >
-                      <Play className="w-4 h-4 fill-black text-black" />
+                      <Play className="w-4 h-4 fill-current" />
                       <span>INITIATE PIPELINE</span>
                     </motion.button>
                   )}
                 </form>
 
-                {/* 4-Stage Vertical Progress Timeline (Revealed when Simulating) */}
-                {missionState === "simulating" && (
+                {/* 4-Stage Progress Timeline (visible during processing) */}
+                {missionState === "processing" && (
                   <motion.div
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -392,27 +518,32 @@ export default function MissionControlDashboard() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono uppercase tracking-wider text-cyan-300 font-semibold flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-[#00E5FF] animate-spin" />
-                        PIPELINE SIMULATION ACTIVE
+                        <Loader2 className="w-4 h-4 text-[#00E5FF] animate-spin" />
+                        PIPELINE RUNNING ON GPU
                       </span>
                       <span className="text-[11px] font-mono text-cyan-400 font-medium">
-                        Stage {simulationStage} of 4
+                        Stage {processingStage} of 4
                       </span>
                     </div>
 
                     <div className="relative pl-1 space-y-4">
                       {stages.map((st, index) => {
-                        const isCompleted = simulationStage > st.id;
-                        const isActive = simulationStage === st.id;
+                        const isCompleted = processingStage > st.id;
+                        const isActive = processingStage === st.id;
 
                         return (
-                          <div key={st.id} className="relative flex items-start gap-3.5">
+                          <div
+                            key={st.id}
+                            className="relative flex items-start gap-3.5"
+                          >
                             {/* Vertical connecting line */}
                             {index < stages.length - 1 && (
                               <div
                                 className={cn(
                                   "absolute left-[13px] top-7 bottom-[-16px] w-[1.5px] transition-colors duration-500",
-                                  isCompleted ? "bg-[#00E5FF]" : "bg-white/10"
+                                  isCompleted
+                                    ? "bg-[#00E5FF]"
+                                    : "bg-white/10"
                                 )}
                               />
                             )}
@@ -428,7 +559,11 @@ export default function MissionControlDashboard() {
                                   : "bg-neutral-900 text-neutral-500 border border-white/10"
                               )}
                             >
-                              {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : st.id}
+                              {isCompleted ? (
+                                <CheckCircle2 className="w-4 h-4" />
+                              ) : (
+                                st.id
+                              )}
                             </div>
 
                             {/* Stage metadata */}
@@ -456,7 +591,11 @@ export default function MissionControlDashboard() {
                                       : "bg-white/[0.02] text-neutral-500 border border-white/5"
                                   )}
                                 >
-                                  {isCompleted ? "Complete" : isActive ? "Running..." : "Queued"}
+                                  {isCompleted
+                                    ? "Complete"
+                                    : isActive
+                                    ? "Running..."
+                                    : "Queued"}
                                 </span>
                               </div>
                               <p className="text-[11px] text-neutral-400 mt-0.5">
@@ -480,7 +619,7 @@ export default function MissionControlDashboard() {
         {/* ================================================================ */}
         {/* PHASE 2: Full-Screen Payload Reveal ('payload')                  */}
         {/* ================================================================ */}
-        {missionState === "payload" && (
+        {missionState === "payload" && pipelineResult && (
           <motion.div
             key="phase-2-payload-reveal"
             initial={{ opacity: 0 }}
@@ -490,228 +629,240 @@ export default function MissionControlDashboard() {
             className="absolute inset-0 z-50 bg-black overflow-y-auto flex flex-col select-none scrollbar-thin scrollbar-thumb-cyan-500/30 scrollbar-track-transparent"
           >
             {/* ------------------------------------------------------------ */}
-            {/* Section 1: Single Full-Screen 100vh Fused Terrain View       */}
+            {/* Section 1: Full-Screen Warped Overlay (hero image)            */}
             {/* ------------------------------------------------------------ */}
-            <div
-              className="h-screen w-full relative shrink-0 bg-cover bg-center overflow-hidden"
-              style={{ backgroundImage: `url("${payloadImage}")` }}
-            >
-              {/* Subtle vignette shadow gradient */}
+            <div className="h-screen w-full relative shrink-0 overflow-hidden">
+              <img
+                src={pipelineResult.images.warped_overlay}
+                alt="Aligned Composite Overlay"
+                className="w-full h-full object-cover"
+              />
+              {/* Subtle vignette */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
 
-              {/* HUD Badge: Composite Payload */}
+              {/* HUD Badge */}
               <div className="absolute top-6 left-6 z-20 pointer-events-none flex items-center gap-2 bg-black/80 px-3.5 py-1.5 rounded-full border border-cyan-500/40 text-xs font-mono text-cyan-300 backdrop-blur-md shadow-xl">
                 <span className="w-2 h-2 rounded-full bg-[#00E5FF] shadow-[0_0_8px_#00E5FF] animate-pulse" />
-                <span>CHANDRAYAAN-2 COMPOSITE LUNAR PAYLOAD</span>
+                <span>ALIGNED COMPOSITE — REAL PIPELINE OUTPUT</span>
+              </div>
+
+              {/* Scroll hint */}
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/50 animate-bounce">
+                <span className="text-[10px] font-mono uppercase tracking-widest">
+                  Scroll for details
+                </span>
+                <ChevronDown className="w-5 h-5" />
               </div>
             </div>
 
             {/* ------------------------------------------------------------ */}
-            {/* Section 2: Scrollable Raw Sensor Reference Frames Section     */}
+            {/* Section 2: Results Breakdown                                  */}
             {/* ------------------------------------------------------------ */}
             <div className="min-h-screen bg-[#050505] pt-24 px-12 pb-48 relative z-40">
               {/* Section Header */}
               <div className="max-w-7xl mx-auto space-y-2 border-b border-white/10 pb-6">
                 <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[#00E5FF]">
                   <Layers className="w-4 h-4 text-[#00E5FF]" />
-                  <span>PAYLOAD BREAKDOWN ARCHITECTURE</span>
+                  <span>PIPELINE RESULTS</span>
                 </div>
-                <h2 className={cn(orbitron.className, "text-2xl md:text-3xl font-bold tracking-tight text-white mt-1")}>
-                  RAW SENSOR REFERENCE FRAMES
+                <h2
+                  className={cn(
+                    orbitron.className,
+                    "text-2xl md:text-3xl font-bold tracking-tight text-white mt-1"
+                  )}
+                >
+                  ALIGNMENT QUALITY ANALYSIS
                 </h2>
                 <p className="text-xs font-mono text-neutral-400 max-w-2xl mt-1">
-                  Inspect the three independent sensor streams fused into the composite payload. Each sensor captures a distinct spatial and spectral regime over the lunar surface.
+                  All images and metrics below are real outputs from the LoFTR +
+                  RANSAC pipeline running on your local CUDA GPU.
                 </p>
               </div>
 
-              {/* 3-Column Grid for the 3 Sensor Reference Frames */}
+              {/* ── Results Grid ── */}
               <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-                {/* Card 1: OHRC (0.25m/px) - High-Res Panchromatic Base */}
-                <div className="border-2 border-dashed border-white/20 hover:border-cyan-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between relative">
+                {/* Card 1: OHRC Input Preview */}
+                <div className="border-2 border-dashed border-white/20 hover:border-cyan-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-[#00E5FF] shadow-[0_0_8px_#00E5FF]" />
-                        SENSOR STREAM A
+                        OHRC INPUT
                       </span>
                       <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
                         0.25 m/px
                       </span>
                     </div>
-
                     <h3 className="text-base font-semibold text-white tracking-tight">
-                      OHRC (0.25m/px) - High-Res Panchromatic Base
+                      OHRC Preprocessed (Downsampled)
                     </h3>
-
                     <p className="text-xs text-neutral-400 leading-relaxed">
-                      Optical High Resolution Camera providing extreme structural detail, crater rim topography, and boulder shadows.
+                      Downsampled OHRC image as fed into the LoFTR matching
+                      engine, padded to multiples of 8.
                     </p>
-
-                    {/* Crater Macro Image Container */}
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <img
-                        src={ohrcImage || defaultSensorImg}
-                        alt="OHRC preview"
+                        src={pipelineResult.images.ohrc_preview}
+                        alt="OHRC Input"
                         className="w-full h-full object-cover grayscale brightness-90 contrast-125 group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-cyan-300 border border-cyan-500/30">
                         BAND: PAN (450-900nm)
                       </div>
-                      <div className="absolute inset-0 border-2 border-dashed border-white/10 rounded-xl pointer-events-none" />
                     </div>
-                  </div>
-
-                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500 relative cursor-pointer hover:text-white transition-colors">
-                    <span className="flex items-center gap-1.5 text-neutral-400">
-                      <UploadCloud className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Drop final OHRC GeoTIFF here</span>
-                    </span>
-                    <span>SWATH: 12 km</span>
-                    <input
-                      type="file"
-                      accept=".zip, image/*, .tif, .tiff"
-                      onChange={(e) => handleFileUpload(e, setOhrcImage)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
                   </div>
                 </div>
 
-                {/* Card 2: TMC-2 (5.0m/px) - Stereo Mapping */}
-                <div className="border-2 border-dashed border-white/20 hover:border-blue-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between relative">
+                {/* Card 2: TMC-2 Input Preview */}
+                <div className="border-2 border-dashed border-white/20 hover:border-blue-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_#3b82f6]" />
-                        SENSOR STREAM B
+                        TMC-2 INPUT
                       </span>
                       <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/30">
                         5.0 m/px
                       </span>
                     </div>
-
                     <h3 className="text-base font-semibold text-white tracking-tight">
-                      TMC-2 (5.0m/px) - Stereo Mapping
+                      TMC-2 Reference Frame
                     </h3>
-
                     <p className="text-xs text-neutral-400 leading-relaxed">
-                      Terrain Mapping Camera 2 generating high-resolution Digital Elevation Models (DEM) from fore, nadir, and aft views.
+                      TMC-2 image used as the reference target for homography
+                      alignment.
                     </p>
-
-                    {/* Crater Macro Image Container with Stereo Shading */}
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <img
-                        src={tmcImage || defaultSensorImg}
-                        alt="TMC-2 preview"
+                        src={pipelineResult.images.tmc_preview}
+                        alt="TMC-2 Input"
                         className="w-full h-full object-cover contrast-150 brightness-85 sepia-[0.25] group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-blue-300 border border-blue-500/30">
                         STEREO TRIPLET DEM
                       </div>
-                      <div className="absolute inset-0 border-2 border-dashed border-white/10 rounded-xl pointer-events-none" />
                     </div>
-                  </div>
-
-                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500 relative cursor-pointer hover:text-white transition-colors">
-                    <span className="flex items-center gap-1.5 text-neutral-400">
-                      <UploadCloud className="w-3.5 h-3.5 text-blue-400" />
-                      <span>Drop final TMC-2 DEM here</span>
-                    </span>
-                    <span>SWATH: 20 km</span>
-                    <input
-                      type="file"
-                      accept=".zip, image/*, .tif, .tiff"
-                      onChange={(e) => handleFileUpload(e, setTmcImage)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
                   </div>
                 </div>
 
-                {/* Card 3: IIRS (80m/px) - Hyperspectral SWIR */}
-                <div className="border-2 border-dashed border-white/20 hover:border-purple-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between relative">
+                {/* Card 3: Match Visualization */}
+                <div className="border-2 border-dashed border-white/20 hover:border-purple-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_8px_#a855f7]" />
-                        SENSOR STREAM C
+                        MATCH VISUALIZATION
                       </span>
                       <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30">
-                        80 m/px
+                        LoFTR
                       </span>
                     </div>
-
                     <h3 className="text-base font-semibold text-white tracking-tight">
-                      IIRS (80m/px) - Hyperspectral SWIR
+                      Keypoint Correspondences
                     </h3>
-
                     <p className="text-xs text-neutral-400 leading-relaxed">
-                      Imaging Infrared Spectrometer characterizing water-ice signatures, hydroxyl absorption, and pyroxene mineralogy.
+                      LoFTR-detected matches with RANSAC inlier filtering. Lines
+                      connect corresponding keypoints.
                     </p>
-
-                    {/* Crater Macro Image Container with Hyperspectral Gradient */}
                     <div className="relative w-full h-56 rounded-xl overflow-hidden border border-white/10 bg-black mt-2">
                       <img
-                        src={iirsImage || defaultSensorImg}
-                        alt="IIRS preview"
-                        className="w-full h-full object-cover invert hue-rotate-90 saturate-200 brightness-110 group-hover:scale-105 transition-transform duration-500"
+                        src={pipelineResult.images.match_visualization}
+                        alt="Match Visualization"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/30 via-pink-500/20 to-amber-500/30 mix-blend-color-dodge pointer-events-none" />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-purple-300 border border-purple-500/30">
-                        SWIR (0.8 - 5.0 µm)
+                        {pipelineResult.metrics.num_inliers} INLIERS / {pipelineResult.metrics.num_matches} MATCHES
                       </div>
-                      <div className="absolute inset-0 border-2 border-dashed border-white/10 rounded-xl pointer-events-none" />
                     </div>
                   </div>
+                </div>
+              </div>
 
-                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500 relative cursor-pointer hover:text-white transition-colors">
-                    <span className="flex items-center gap-1.5 text-neutral-400">
-                      <UploadCloud className="w-3.5 h-3.5 text-purple-400" />
-                      <span>Drop final IIRS spectral cube here</span>
+              {/* ── Checkerboard Full-Width ── */}
+              <div className="max-w-7xl mx-auto mt-12">
+                <div className="border-2 border-dashed border-white/20 hover:border-green-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="space-y-1">
+                      <span className="text-xs font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e]" />
+                        ALIGNMENT CHECKERBOARD
+                      </span>
+                      <p className="text-xs text-neutral-400">
+                        Alternating tiles from TMC-2 reference and warped OHRC —
+                        smooth transitions indicate sub-pixel alignment quality.
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-green-500/10 text-green-300 border border-green-500/30">
+                      RMSE: {displayRmse} px
                     </span>
-                    <span>256 BANDS</span>
-                    <input
-                      type="file"
-                      accept=".zip, image/*, .tif, .tiff"
-                      onChange={(e) => handleFileUpload(e, setIirsImage)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  </div>
+                  <div className="relative w-full h-72 md:h-96 rounded-xl overflow-hidden border border-white/10 bg-black">
+                    <img
+                      src={pipelineResult.images.checkerboard}
+                      alt="Alignment Checkerboard"
+                      className="w-full h-full object-cover"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Dedicated invisible spacer to push content above fixed bottom bar */}
-              <div className="h-40 w-full shrink-0"></div>
+              {/* Spacer for footer */}
+              <div className="h-40 w-full shrink-0" />
             </div>
 
             {/* ------------------------------------------------------------ */}
-            {/* Section 3: Fixed Frosted Black Glassmorphic Aerospace Bottom Bar */}
+            {/* Section 3: Fixed Bottom Bar with REAL Metrics                 */}
             {/* ------------------------------------------------------------ */}
             <footer className="fixed bottom-0 w-full h-24 bg-black/60 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-50 flex items-center justify-between px-12">
-              {/* Left Side: Global Telemetry Metrics */}
+              {/* Left Side: Real Telemetry Metrics */}
               <div className="flex items-center gap-4 font-mono">
                 <div className="bg-black/50 border border-cyan-500/20 px-3.5 py-1.5 rounded-lg flex items-center gap-2">
-                  <span className="text-[9px] uppercase tracking-wider text-gray-400">RMSE:</span>
-                  <span className="text-xs font-bold text-cyan-400">0.38 px</span>
+                  <span className="text-[9px] uppercase tracking-wider text-gray-400">
+                    RMSE:
+                  </span>
+                  <span className="text-xs font-bold text-cyan-400">
+                    {displayRmse} px
+                  </span>
                 </div>
                 <div className="bg-black/50 border border-cyan-500/20 px-3.5 py-1.5 rounded-lg flex items-center gap-2">
-                  <span className="text-[9px] uppercase tracking-wider text-gray-400">Inliers:</span>
-                  <span className="text-xs font-bold text-cyan-400">1,482</span>
+                  <span className="text-[9px] uppercase tracking-wider text-gray-400">
+                    Inliers:
+                  </span>
+                  <span className="text-xs font-bold text-cyan-400">
+                    {displayInliers}
+                  </span>
                 </div>
                 <div className="bg-black/50 border border-cyan-500/20 px-3.5 py-1.5 rounded-lg flex items-center gap-2">
-                  <span className="text-[9px] uppercase tracking-wider text-gray-400">Ratio:</span>
-                  <span className="text-xs font-bold text-cyan-400">89.4%</span>
+                  <span className="text-[9px] uppercase tracking-wider text-gray-400">
+                    Ratio:
+                  </span>
+                  <span className="text-xs font-bold text-cyan-400">
+                    {displayRatio}
+                  </span>
+                </div>
+                <div className="bg-black/50 border border-cyan-500/20 px-3.5 py-1.5 rounded-lg flex items-center gap-2">
+                  <span className="text-[9px] uppercase tracking-wider text-gray-400">
+                    Matches:
+                  </span>
+                  <span className="text-xs font-bold text-cyan-400">
+                    {metrics?.total_raw?.toLocaleString() ?? "—"} → {metrics?.total_filtered?.toLocaleString() ?? "—"}
+                  </span>
                 </div>
               </div>
 
               {/* Right Side: Action Buttons */}
               <div className="flex items-center gap-4">
-                <button className="flex items-center gap-2 px-6 py-2.5 bg-cyan-500/10 border border-cyan-400/50 text-cyan-400 hover:bg-cyan-400 hover:text-black transition-all rounded-lg font-mono text-sm font-bold tracking-widest shadow-[0_0_15px_rgba(0,229,255,0.2)]">
-                  <Download className="w-4 h-4" /> DOWNLOAD DATA
+                <button
+                  onClick={handleDownload}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-cyan-500/10 border border-cyan-400/50 text-cyan-400 hover:bg-cyan-400 hover:text-black transition-all rounded-lg font-mono text-sm font-bold tracking-widest shadow-[0_0_15px_rgba(0,229,255,0.2)]"
+                >
+                  <Download className="w-4 h-4" /> DOWNLOAD GEOTIFF
                 </button>
                 <button
                   onClick={handleReturnToCommandCenter}
                   className="flex items-center gap-2 px-6 py-2.5 bg-black/40 border border-white/20 text-gray-300 hover:border-white/50 hover:text-white transition-all rounded-lg font-mono text-sm tracking-widest"
                 >
-                  RESET
+                  <RotateCcw className="w-4 h-4" /> RESET
                 </button>
               </div>
             </footer>
