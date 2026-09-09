@@ -1,4 +1,5 @@
 "use client";
+import { TelemetryGraphs } from "@/components/ui/TelemetryGraphs";
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -365,11 +366,10 @@ export default function MissionControlDashboard() {
                             LOCKED
                           </span>
                         </div>
-                        <img
-                          src={ohrcUpload.previewUrl}
-                          alt="OHRC Preview"
-                          className="w-full h-24 object-cover rounded mb-3 border border-white/10 grayscale contrast-125"
-                        />
+                        <div className="w-full h-24 bg-black/80 rounded mb-3 border border-cyan-500/20 flex flex-col items-center justify-center">
+                          <span className="text-cyan-500 font-mono text-xs">PDS4 ARCHIVE</span>
+                          <span className="text-gray-500 font-mono text-[9px] mt-1">.zip loaded</span>
+                        </div>
                         <p className="text-[10px] text-gray-400 truncate">
                           {ohrcUpload.file.name}
                         </p>
@@ -409,11 +409,7 @@ export default function MissionControlDashboard() {
                             LOCKED
                           </span>
                         </div>
-                        <img
-                          src={tmcUpload.previewUrl}
-                          alt="TMC-2 Preview"
-                          className="w-full h-24 object-cover rounded mb-3 border border-white/10 contrast-150 brightness-85 sepia-[0.25]"
-                        />
+                        <div className="w-full h-24 bg-black/80 rounded mb-3 border border-cyan-500/20 flex flex-col items-center justify-center"><span className="text-cyan-500 font-mono text-xs">PDS4 ARCHIVE</span><span className="text-gray-500 font-mono text-[9px] mt-1">.zip loaded</span></div>
                         <p className="text-[10px] text-gray-400 truncate">
                           {tmcUpload.file.name}
                         </p>
@@ -453,11 +449,7 @@ export default function MissionControlDashboard() {
                             LOCKED
                           </span>
                         </div>
-                        <img
-                          src={iirsUpload.previewUrl}
-                          alt="IIRS Preview"
-                          className="w-full h-24 object-cover rounded mb-3 border border-white/10 invert hue-rotate-90 saturate-200 brightness-110"
-                        />
+                        <div className="w-full h-24 bg-black/80 rounded mb-3 border border-purple-500/20 flex flex-col items-center justify-center"><span className="text-purple-500 font-mono text-xs">PDS4 ARCHIVE</span><span className="text-gray-500 font-mono text-[9px] mt-1">.zip loaded</span></div>
                         <p className="text-[10px] text-gray-400 truncate">
                           {iirsUpload.file.name}
                         </p>
@@ -677,9 +669,21 @@ export default function MissionControlDashboard() {
                   All images and metrics below are real outputs from the LoFTR +
                   RANSAC pipeline running on your local CUDA GPU.
                 </p>
+
               </div>
 
+              {/* ── Metric Graphs ── */}
+              {metrics && (
+                <TelemetryGraphs 
+                  rmse={metrics.rmse} 
+                  inliers={metrics.num_inliers} 
+                  totalMatches={metrics.num_matches} 
+                  ratio={metrics.inlier_ratio} 
+                />
+              )}
+
               {/* ── Results Grid ── */}
+
               <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
                 {/* Card 1: OHRC Input Preview */}
                 <div className="border-2 border-dashed border-white/20 hover:border-cyan-400/60 rounded-2xl overflow-hidden p-6 bg-neutral-900 backdrop-blur-md shadow-2xl transition-all group flex flex-col justify-between">

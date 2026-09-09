@@ -23,9 +23,9 @@ Build an automated, real-time pipeline that accepts raw Chandrayaan-2 imagery up
 ## 3. Pipeline Stages (What To Build)
 
 ### Stage 0 — UI File Upload & Ingestion
-- User drags and drops unaligned OHRC, TMC-2, and IIRS GeoTIFFs into the Next.js frontend.
+- User drags and drops unaligned raw PRADAN `.zip` archives (OHRC, TMC-2, IIRS) into the Next.js frontend.
 - Files are POSTed to the local FastAPI backend via `multipart/form-data`.
-- `rasterio` parses the files, extracting pixel arrays and spatial metadata in-memory.
+- Backend unzips the archives, parses the PDS4 `.xml` metadata, and reads the raw binary `.img` pixel arrays.
 
 ### Stage 1 — OHRC-to-TMC Alignment (Optical ↔ Optical)
 - **Downsampling:** Gaussian-blur then downsample OHRC from 0.25m to 5m to match TMC spatial scale.

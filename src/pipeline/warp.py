@@ -16,7 +16,13 @@ def align_images(src_img, keypoints_src, keypoints_dst):
         }
 
     # Find Homography using RANSAC
-    H, inlier_mask = cv2.findHomography(keypoints_src, keypoints_dst, cv2.RANSAC, 5.0)
+    H_affine, inlier_mask = cv2.estimateAffinePartial2D(keypoints_src, keypoints_dst, method=cv2.RANSAC, ransacReprojThreshold=5.0)
+    if H_affine is not None:
+        # Convert 2x3 affine matrix to 3x3 homography matrix format for cv2.warpPerspective
+        import numpy as np
+        H = np.vstack([H_affine, [0, 0, 1]])
+    else:
+        H = None
     
     if H is None:
         return {

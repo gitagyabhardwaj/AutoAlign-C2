@@ -6,7 +6,7 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 # --- ML Lead Configuration ---
-CONFIDENCE_THRESHOLD = 0.2
+CONFIDENCE_THRESHOLD = 0.05
 MIN_MATCH_COUNT = 10
 
 class LoFTRMatcher:

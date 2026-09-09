@@ -53,3 +53,8 @@ output_analysis_ready/*.img
 # Next.js Auto-generated Agent Rules
 AGENTS.md
 CLAUDE.md
+architecture_defense.md
+defense_01_data_ingestion.md
+defense_02_modality_bridge_ml.md
+defense_03_geometry_and_upscaling.md
+defense_04_export_and_metrics.md

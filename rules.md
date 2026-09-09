@@ -21,10 +21,10 @@
 - This strips away the modality gap and exposes shared structural geometry (crater rims, ridges).
 - Without this step, LoFTR will fail on cross-modal pairs.
 
-## Rule 5: Local GeoTIFF Uploads (No Cloud Limits)
-- Because the stack runs exclusively on localhost, the UI must accept raw, multi-GB GeoTIFF uploads directly from the user via Drag-and-Drop.
+## Rule 5: Local PRADAN .Zip Uploads (No Cloud Limits)
+- Because the stack runs exclusively on localhost, the UI must accept raw PRADAN `.zip` archives directly from the user via Drag-and-Drop.
 - The Next.js frontend sends these files via `multipart/form-data` to the local FastAPI backend.
-- We do not rely on pre-loaded demo folders or live PRADAN API fetching.
+- The backend unzips them, parses the PDS4 `.xml` metadata, and reads the `.img` binaries in memory.
 
 ## Rule 6: Generate Real Scientific Output (GeoTIFF Export)
 - The pipeline MUST NOT just generate web-friendly JPGs for the dashboard.
